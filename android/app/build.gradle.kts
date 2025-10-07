@@ -32,15 +32,18 @@ android {
 
     splits {
         abi {
-            enable true
+            isEnable = true
             reset()
-            include 'arm64-v8a'   // hanya arm64
-            universalApk false    // jangan buat universal APK
+            include("arm64-v8a")  // hanya arm64
+            isUniversalApk = false
         }
     }
 
     buildTypes {
         release {
+            // optional: matikan shrink/minify untuk debugging
+            isMinifyEnabled = false
+            isShrinkResources = false
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
