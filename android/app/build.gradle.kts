@@ -26,22 +26,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // ⚠️ Hanya set NDK abiFilters jika bikin APK spesifik
-        ndk {
-            abiFilters += setOf("arm64-v8a")  // hanya arm64
-        }
-    }
-
-    // ⚠️ Jika mau APK spesifik arsitektur
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a")  // hanya arm64
-            isUniversalApk = false
-        }
-    }
-
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
