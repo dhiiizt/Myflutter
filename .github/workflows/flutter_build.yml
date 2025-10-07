@@ -43,11 +43,11 @@ jobs:
 
       # 5. Get dependencies
       - name: Get Flutter dependencies
-        run: flutter pub get
+        run: flutter clean
 
       # 6. Clean build folder (opsional tapi aman)
       - name: Clean previous builds
-        run: flutter clean
+        run: flutter pub get
 
       # 7. Build release APK
       - name: Build release APK
