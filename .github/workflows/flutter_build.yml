@@ -1,4 +1,4 @@
-name: Flutter Build Release
+name: Flutter Build APK arm64
 
 on:
   push:
@@ -10,29 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # 1️⃣ Checkout repository
+      - uses: actions/checkout@v4
 
-      # 2. Setup Flutter
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      # 2️⃣ Setup Flutter
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.5' # versi stabil terbaru
+          flutter-version: '3.35.5'
 
-      # 3. Cache pub packages
-      - name: Cache Flutter Pub packages
-        uses: actions/cache@v3
+      # 3️⃣ Cache pub packages
+      - uses: actions/cache@v3
         with:
-          path: |
-            ~/.pub-cache
+          path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pub-
 
-      # 4. Cache Gradle (opsional tapi mempercepat build)
-      - name: Cache Gradle
-        uses: actions/cache@v3
+      # 4️⃣ Cache Gradle
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.gradle/caches
@@ -41,21 +36,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 5. Get dependencies
-      - name: Get Flutter dependencies
-        run: flutter clean
+      # 5️⃣ Get dependencies
+      - run: flutter pub get
 
-      # 6. Clean build folder (opsional tapi aman)
-      - name: Clean previous builds
-        run: flutter pub get
+      # 6️⃣ Clean build folder
+      - run: flutter clean
 
-      # 7. Build release APK
-      - name: Build release APK
-        run: flutter build apk --release
+      # 7️⃣ Build APK arm64-v8a
+      - run: flutter build apk --release
 
-      # 8. Upload APK artifact
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      # 8️⃣ Upload APK artifact
+      - uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: app-arm64-release
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
