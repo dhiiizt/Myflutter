@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter plugin harus setelah Android & Kotlin plugin
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -20,16 +20,19 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.getapp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // ⚠️ Hanya set NDK abiFilters jika bikin APK spesifik
+        ndk {
+            abiFilters += setOf("arm64-v8a")  // hanya arm64
+        }
     }
 
+    // ⚠️ Jika mau APK spesifik arsitektur
     splits {
         abi {
             isEnable = true
@@ -40,12 +43,10 @@ android {
     }
 
     buildTypes {
-        release {
-            // optional: matikan shrink/minify untuk debugging
+        getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Ganti dengan release signing config untuk Play Store
             signingConfig = signingConfigs.getByName("debug")
         }
     }
