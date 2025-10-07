@@ -15,7 +15,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # Carousel slider package
-  carousel_slider: ^6.1.0
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:
