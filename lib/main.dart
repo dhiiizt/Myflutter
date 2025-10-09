@@ -95,6 +95,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
   String output = '';
   
   static const MethodChannel _channel = MethodChannel('com.example.getapp/native');
+  
 
   // 🔹 Shizuku Test
   Future<void> _runTest() async {
