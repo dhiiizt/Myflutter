@@ -3,6 +3,16 @@
 
     <!-- INTERNET permission harus di luar <application> -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- ✅ Izin untuk deteksi package lain -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- ✅ Izin Shizuku API versi terbaru -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
     <application
         android:label="getapp"
@@ -29,6 +39,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:exported="true"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <meta-data
             android:name="flutterEmbedding"
@@ -36,6 +54,14 @@
     </application>
 
     <queries>
+        <!-- Akses ke Mobile Legends -->
+        <package android:name="com.mobile.legends" />
+        <package android:name="com.mobile.legends.hwag" />
+
+        <!-- Akses ke Shizuku -->
+        <package android:name="moe.shizuku.manager" />
+        <package android:name="moe.shizuku.privileged.api" />
+        
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
