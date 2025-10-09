@@ -1,4 +1,4 @@
-package com.example.my_app
+package com.example.getapp
 
 import android.app.Activity
 import android.content.Context
@@ -16,7 +16,7 @@ import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 
 class MainActivity: FlutterActivity() {
 
-    private val CHANNEL = "com.example.my_app/native"
+    private val CHANNEL = "com.example.getapp/native"
     private var savedTreeUri: String? = null
     private val TREE_REQUEST_CODE = 1234
     private var pendingResult: MethodChannel.Result? = null

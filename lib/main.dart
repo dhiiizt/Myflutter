@@ -94,7 +94,7 @@ class CollapsiblePage extends StatefulWidget {
 class _CollapsiblePageState extends State<CollapsiblePage> {
   String output = '';
   
-  static const MethodChannel _channel = MethodChannel('com.example.my_app/native');
+  static const MethodChannel _channel = MethodChannel('com.example.getapp/native');
 
   // 🔹 Shizuku Test
   Future<void> _runTest() async {

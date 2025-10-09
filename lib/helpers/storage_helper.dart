@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 class StorageHelper {
-  static const _channel = MethodChannel('com.example.my_app/native');
+  static const _channel = MethodChannel('com.example.getapp/native');
 
   static Future<bool> isAppInstalled(String packageName) async {
     try {
