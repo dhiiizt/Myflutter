@@ -7,9 +7,6 @@ import '/helpers/storage_helper.dart';
 import 'package:flutter/foundation.dart';
 
 class DownloadManagerHelper {
-    static const MethodChannel _channel =
-MethodChannel('com.example.getapp/native');
-
   static Future<bool> handleDownloadAndInstall(String url) async {
     Directory? tempDir;
     File? downloadedFile;
