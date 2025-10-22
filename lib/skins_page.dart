@@ -17,12 +17,9 @@ class _SkinsPageState extends State<SkinsPage> {
   String selectedRole = 'All';
   bool loading = true;
 
-<<<<<<< HEAD
-=======
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
->>>>>>> 6d3a480 (Initial commit)
   final String jsonUrl =
       'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/hero_skins.json';
 
@@ -87,42 +84,6 @@ class _SkinsPageState extends State<SkinsPage> {
     }).toList();
   }
 
-<<<<<<< HEAD
-  // 🔹 Fungsi progress dialog
-  Future<void> _showProgressDialog() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: SizedBox(
-            height: 80,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text(
-                  'Sedang mengunduh...',
-                  style: TextStyle(fontFamily: 'Jost'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _hideProgressDialog() {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
-    }
-  }
-=======
 // 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
 Future<void> _showProgressDialog() async {
   showCupertinoDialog(
@@ -165,103 +126,10 @@ void _hideProgressDialog() {
     Navigator.pop(context);
   }
 }
->>>>>>> 6d3a480 (Initial commit)
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme(
-<<<<<<< HEAD
-  brightness: Brightness.light,
-  primary: const Color(0xFF2196F3), // 💙 Biru utama (Blue 500)
-  onPrimary: Colors.white,
-  secondary: const Color(0xFF64B5F6), // 💙 Biru muda (Blue 300)
-  onSecondary: Colors.white,
-  surface: Colors.white,
-  onSurface: const Color(0xFF1A1A1A),
-  surfaceContainerHighest: const Color(0xFFFFFFFF),
-  background: const Color(0xFFF3F8FF), // 💙 Latar belakang biru lembut
-  onBackground: const Color(0xFF333333),
-  error: Colors.red.shade400,
-  onError: Colors.white,
-  primaryContainer: const Color(0xFFE3F2FD), // 💙 Biru pastel (soft background)
-  onPrimaryContainer: const Color(0xFF0D47A1), // 💙 Biru tua untuk teks kontras
-);
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: colorScheme.primaryContainer,
-        title: const Text(
-          'List Skins',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontFamily: 'Jost',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                child: Column(
-                  children: [
-                    // 🔹 Filter role
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: getRoles()
-                            .map(
-                              (r) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                child: ChoiceChip(
-                                  label: Text(r),
-                                  selected: selectedRole == r,
-                                  onSelected: (_) => setState(() => selectedRole = r),
-                                  selectedColor: colorScheme.primary,
-                                  backgroundColor: colorScheme.surfaceVariant,
-                                  labelStyle: TextStyle(
-                                    color: selectedRole == r
-                                        ? Colors.white
-                                        : colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 🔹 GridView Hero
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 0.62,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                        itemCount: filteredHeroes.length,
-                        itemBuilder: (context, index) {
-                          final hero = filteredHeroes[index];
-                          return HeroCard(
-                            hero: hero,
-                            colorScheme: colorScheme,
-                            onTap: () => _showHeroSheet(context, hero),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-=======
       brightness: Brightness.light,
       primary: const Color(0xFF2196F3), // 💙 Biru utama (Blue 500)
       onPrimary: Colors.white,
@@ -360,7 +228,6 @@ void _hideProgressDialog() {
                 ),
               ),
       ),
->>>>>>> 6d3a480 (Initial commit)
     );
   }
 
@@ -389,17 +256,6 @@ void _hideProgressDialog() {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
-<<<<<<< HEAD
-  imageUrl: hero['image'] ?? '',
-  width: 70,
-  height: 70,
-  fit: BoxFit.cover,
-  alignment: Alignment.topCenter, // 🔹 fokus ke bagian atas
-  fadeInDuration: const Duration(milliseconds: 300),
-  placeholder: (context, url) => Container(color: Colors.black12),
-  errorWidget: (context, url, error) => const Icon(Icons.error),
-),
-=======
                         imageUrl: hero['image'] ?? '',
                         width: 70,
                         height: 70,
@@ -411,7 +267,6 @@ void _hideProgressDialog() {
                         errorWidget: (context, url, error) =>
                             const Icon(Icons.error),
                       ),
->>>>>>> 6d3a480 (Initial commit)
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -524,78 +379,6 @@ void _hideProgressDialog() {
   }
 
   Future<void> _confirmDownload(
-<<<<<<< HEAD
-  BuildContext context,
-  Map<String, dynamic> skin,
-) async {
-  // 🔹 Tampilkan dialog konfirmasi bergaya iOS
-  final confirm = await showCupertinoDialog<bool>(
-    context: context,
-    builder: (context) => CupertinoAlertDialog(
-      title: Text(
-        'Notice!',
-        style: const TextStyle(
-          fontFamily: 'Jost',
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Text(
-          'Apakah kamu ingin mengunduh dan memasang "${skin['name']}"?',
-          style: const TextStyle(fontFamily: 'Jost'),
-        ),
-      ),
-      actions: [
-        CupertinoDialogAction(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        CupertinoDialogAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text(
-            'Download',
-            style: TextStyle(color: CupertinoColors.systemBlue),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // 🔹 Jika user menekan "Batal", hentikan proses
-  if (confirm != true) return;
-
-  final url = skin['download_url'];
-  final skinName = skin['name'] ?? 'Unknown Skin';
-
-  if (url == null || url.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('URL tidak ditemukan di data JSON!')),
-    );
-    return;
-  }
-
-  // 🔹 Tampilkan dialog loading
-  await _showProgressDialog();
-
-  final result = await DownloadManagerHelper.handleDownloadAndInstall(url);
-
-  // 🔹 Tutup dialog setelah selesai
-  _hideProgressDialog();
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        result
-            ? '✅ Berhasil mengunduh dan memasang $skinName!'
-            : '❌ Gagal mengunduh $skinName!',
-      ),
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
-}
-=======
     BuildContext context,
     Map<String, dynamic> skin,
   ) async {
@@ -659,7 +442,6 @@ void _hideProgressDialog() {
       ),
     );
   }
->>>>>>> 6d3a480 (Initial commit)
 }
 
 class HeroCard extends StatelessWidget {
@@ -688,19 +470,6 @@ class HeroCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
-<<<<<<< HEAD
-  imageUrl: hero['image'] ?? '',
-  fit: BoxFit.cover,
-  alignment: Alignment.topCenter, // 🔹 fokus ke bagian atas
-  fadeInDuration: const Duration(milliseconds: 300),
-  placeholder: (context, url) => Container(color: Colors.black12),
-  errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.red),
-),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.transparent, colorScheme.shadow.withOpacity(0.7)],
-=======
               imageUrl: hero['image'] ?? '',
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
@@ -716,7 +485,6 @@ class HeroCard extends StatelessWidget {
                     Colors.transparent,
                     Colors.black.withOpacity(0.7)
                   ],
->>>>>>> 6d3a480 (Initial commit)
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),

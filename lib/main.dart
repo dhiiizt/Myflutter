@@ -272,43 +272,6 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
     }
   }
   
-<<<<<<< HEAD
-   // 🔹 Fungsi untuk menampilkan dialog loading bulat
-  Future<void> _showProgressDialog() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // tidak bisa ditutup manual
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: SizedBox(
-            height: 80,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text(
-                  'Sedang mengunduh...',
-                  style: TextStyle(fontFamily: 'Jost'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // 🔹 Fungsi untuk menutup dialog progress
-  void _hideProgressDialog() {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
-    }
-  }
-=======
 // 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
 Future<void> _showProgressDialog() async {
   showCupertinoDialog(
@@ -351,7 +314,6 @@ void _hideProgressDialog() {
     Navigator.pop(context);
   }
 }
->>>>>>> 6d3a480 (Initial commit)
 
   @override
   Widget build(BuildContext context) {
