@@ -48,13 +48,6 @@ flutter {
 dependencies {
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
-<<<<<<< HEAD
     implementation ("androidx.documentfile:documentfile:1.0.1")
-=======
-<<<<<<< HEAD
-=======
-    implementation ("androidx.documentfile:documentfile:1.0.1")
->>>>>>> 88033a8 (Initial commit)
->>>>>>> 6d3a480 (Initial commit)
 }
 
