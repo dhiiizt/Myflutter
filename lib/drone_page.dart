@@ -3,11 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-<<<<<<< HEAD
 import '/helpers/download_manager_helper.dart';
-=======
-import 'helpers/download_manager_helper.dart';
->>>>>>> 6d3a480 (Initial commit)
 import 'package:flutter/cupertino.dart';
 
 class DronePage extends StatefulWidget {

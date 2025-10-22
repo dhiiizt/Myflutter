@@ -5,13 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-<<<<<<< HEAD
-import 'helpers/storage_helper.dart';
-import 'helpers/shizuku_helper.dart';
-=======
 import '/helpers/storage_helper.dart';
 import '/helpers/shizuku_helper.dart';
->>>>>>> 6d3a480 (Initial commit)
 import 'drone_page.dart';
 import 'skins_page.dart';
 import 'emote_page.dart';
