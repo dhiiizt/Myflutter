@@ -178,36 +178,6 @@ class MainActivity : FlutterActivity() {
     // ==========================================================
     // =============== Copy folder dengan SAF ===================
     // ==========================================================
-<<<<<<< HEAD
-    private fun copyFolderWithSAF(source: File, targetTree: DocumentFile) {
-    source.listFiles()?.forEach { file ->
-        try {
-            if (file.isDirectory) {
-                // 🔹 Cek apakah folder dengan nama sama sudah ada
-                targetTree.findFile(file.name)?.delete()
-
-                // 🔹 Buat folder baru
-                val subDir = targetTree.createDirectory(file.name)
-                if (subDir != null) {
-                    copyFolderWithSAF(file, subDir)
-                }
-            } else {
-                // 🔹 Jika file sudah ada, hapus dulu
-                targetTree.findFile(file.name)?.delete()
-
-                // 🔹 Buat file baru dan tulis datanya
-                val newFile = targetTree.createFile("application/octet-stream", file.name)
-                if (newFile != null) {
-                    contentResolver.openOutputStream(newFile.uri)?.use { output ->
-                        FileInputStream(file).use { input ->
-                            input.copyTo(output)
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-=======
 private fun copyFolderWithSAF(source: File, targetTree: DocumentFile) {
     source.listFiles()?.forEach { file ->
         if (file.isDirectory) {
@@ -228,13 +198,10 @@ private fun copyFolderWithSAF(source: File, targetTree: DocumentFile) {
                     }
                 }
             }
->>>>>>> 6d3a480 (Initial commit)
         }
     }
 }
 
-<<<<<<< HEAD
-=======
 // ===============================
 // Hapus karakter illegal untuk SAF
 // ===============================
@@ -242,7 +209,6 @@ private fun sanitizeFileName(name: String): String {
     return name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
 }
 
->>>>>>> 6d3a480 (Initial commit)
     private fun isAppInstalled(packageName: String): Boolean {
         return try {
             packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
