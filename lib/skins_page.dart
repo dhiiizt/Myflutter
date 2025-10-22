@@ -17,6 +17,12 @@ class _SkinsPageState extends State<SkinsPage> {
   String selectedRole = 'All';
   bool loading = true;
 
+<<<<<<< HEAD
+=======
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
+>>>>>>> 6d3a480 (Initial commit)
   final String jsonUrl =
       'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/hero_skins.json';
 
@@ -81,6 +87,7 @@ class _SkinsPageState extends State<SkinsPage> {
     }).toList();
   }
 
+<<<<<<< HEAD
   // 🔹 Fungsi progress dialog
   Future<void> _showProgressDialog() async {
     showDialog(
@@ -115,10 +122,55 @@ class _SkinsPageState extends State<SkinsPage> {
       Navigator.pop(context);
     }
   }
+=======
+// 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
+Future<void> _showProgressDialog() async {
+  showCupertinoDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text(
+          'Mohon tunggu...',
+          style: TextStyle(
+            fontFamily: 'Jost',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            children: const [
+              CupertinoActivityIndicator(radius: 12),
+              SizedBox(height: 16),
+              Text(
+                'Sedang mengunduh dan memproses file...',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Jost',
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// 🔹 Fungsi untuk menutup dialog progress
+void _hideProgressDialog() {
+  if (Navigator.canPop(context)) {
+    Navigator.pop(context);
+  }
+}
+>>>>>>> 6d3a480 (Initial commit)
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme(
+<<<<<<< HEAD
   brightness: Brightness.light,
   primary: const Color(0xFF2196F3), // 💙 Biru utama (Blue 500)
   onPrimary: Colors.white,
@@ -209,6 +261,106 @@ class _SkinsPageState extends State<SkinsPage> {
                 ),
               ),
             ),
+=======
+      brightness: Brightness.light,
+      primary: const Color(0xFF2196F3), // 💙 Biru utama (Blue 500)
+      onPrimary: Colors.white,
+      secondary: const Color(0xFF64B5F6), // 💙 Biru muda (Blue 300)
+      onSecondary: Colors.white,
+      surface: Colors.white,
+      onSurface: const Color(0xFF1A1A1A),
+      surfaceContainerHighest: const Color(0xFFFFFFFF),
+      background: const Color(0xFFF3F8FF), // 💙 Latar belakang biru lembut
+      onBackground: const Color(0xFF333333),
+      error: Colors.redAccent,
+      onError: Colors.white,
+      primaryContainer: const Color(0xFFE3F2FD), // 💙 Biru pastel
+      onPrimaryContainer: const Color(0xFF0D47A1),
+    );
+
+    return ScaffoldMessenger(
+      key: _scaffoldMessengerKey,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: colorScheme.primaryContainer,
+          title: const Text(
+            'List Skins',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontFamily: 'Jost',
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: true,
+          iconTheme: const IconThemeData(color: Colors.black),
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 8.0),
+                  child: Column(
+                    children: [
+                      // 🔹 Filter role
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: getRoles()
+                              .map(
+                                (r) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4.0),
+                                  child: ChoiceChip(
+                                    label: Text(r),
+                                    selected: selectedRole == r,
+                                    onSelected: (_) =>
+                                        setState(() => selectedRole = r),
+                                    selectedColor: colorScheme.primary,
+                                    backgroundColor:
+                                        colorScheme.primaryContainer,
+                                    labelStyle: TextStyle(
+                                      color: selectedRole == r
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 🔹 GridView Hero
+                      Expanded(
+                        child: GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 0.62,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
+                          itemCount: filteredHeroes.length,
+                          itemBuilder: (context, index) {
+                            final hero = filteredHeroes[index];
+                            return HeroCard(
+                              hero: hero,
+                              colorScheme: colorScheme,
+                              onTap: () => _showHeroSheet(context, hero),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+      ),
+>>>>>>> 6d3a480 (Initial commit)
     );
   }
 
@@ -237,6 +389,7 @@ class _SkinsPageState extends State<SkinsPage> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
+<<<<<<< HEAD
   imageUrl: hero['image'] ?? '',
   width: 70,
   height: 70,
@@ -246,6 +399,19 @@ class _SkinsPageState extends State<SkinsPage> {
   placeholder: (context, url) => Container(color: Colors.black12),
   errorWidget: (context, url, error) => const Icon(Icons.error),
 ),
+=======
+                        imageUrl: hero['image'] ?? '',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        fadeInDuration: const Duration(milliseconds: 300),
+                        placeholder: (context, url) =>
+                            Container(color: Colors.black12),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.error),
+                      ),
+>>>>>>> 6d3a480 (Initial commit)
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -358,6 +524,7 @@ class _SkinsPageState extends State<SkinsPage> {
   }
 
   Future<void> _confirmDownload(
+<<<<<<< HEAD
   BuildContext context,
   Map<String, dynamic> skin,
 ) async {
@@ -428,6 +595,71 @@ class _SkinsPageState extends State<SkinsPage> {
     ),
   );
 }
+=======
+    BuildContext context,
+    Map<String, dynamic> skin,
+  ) async {
+    final confirm = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text(
+          'Notice!',
+          style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'Apakah kamu ingin mengunduh dan memasang "${skin['name']}"?',
+            style: const TextStyle(fontFamily: 'Jost'),
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Download',
+              style: TextStyle(color: CupertinoColors.systemBlue),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final url = skin['download_url'];
+    final skinName = skin['name'] ?? 'Unknown Skin';
+
+    if (url == null || url.isEmpty) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(content: Text('URL tidak ditemukan di data JSON!')),
+      );
+      return;
+    }
+
+    await _showProgressDialog();
+
+    final result = await DownloadManagerHelper.handleDownloadAndInstall(url);
+
+    _hideProgressDialog();
+
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(
+          result
+              ? '✅ Berhasil mengunduh dan memasang $skinName!'
+              : '❌ Gagal mengunduh $skinName!',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+>>>>>>> 6d3a480 (Initial commit)
 }
 
 class HeroCard extends StatelessWidget {
@@ -456,6 +688,7 @@ class HeroCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
+<<<<<<< HEAD
   imageUrl: hero['image'] ?? '',
   fit: BoxFit.cover,
   alignment: Alignment.topCenter, // 🔹 fokus ke bagian atas
@@ -467,6 +700,23 @@ class HeroCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.transparent, colorScheme.shadow.withOpacity(0.7)],
+=======
+              imageUrl: hero['image'] ?? '',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              fadeInDuration: const Duration(milliseconds: 300),
+              placeholder: (context, url) => Container(color: Colors.black12),
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.error, color: Colors.red),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7)
+                  ],
+>>>>>>> 6d3a480 (Initial commit)
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),

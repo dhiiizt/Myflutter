@@ -5,8 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+<<<<<<< HEAD
 import 'helpers/storage_helper.dart';
 import 'helpers/shizuku_helper.dart';
+=======
+import '/helpers/storage_helper.dart';
+import '/helpers/shizuku_helper.dart';
+>>>>>>> 6d3a480 (Initial commit)
 import 'drone_page.dart';
 import 'skins_page.dart';
 import 'emote_page.dart';
@@ -272,6 +277,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
     }
   }
   
+<<<<<<< HEAD
    // 🔹 Fungsi untuk menampilkan dialog loading bulat
   Future<void> _showProgressDialog() async {
     showDialog(
@@ -307,6 +313,50 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
       Navigator.pop(context);
     }
   }
+=======
+// 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
+Future<void> _showProgressDialog() async {
+  showCupertinoDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text(
+          'Mohon tunggu...',
+          style: TextStyle(
+            fontFamily: 'Jost',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            children: const [
+              CupertinoActivityIndicator(radius: 12),
+              SizedBox(height: 16),
+              Text(
+                'Sedang mengunduh dan memproses file...',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Jost',
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// 🔹 Fungsi untuk menutup dialog progress
+void _hideProgressDialog() {
+  if (Navigator.canPop(context)) {
+    Navigator.pop(context);
+  }
+}
+>>>>>>> 6d3a480 (Initial commit)
 
   @override
   Widget build(BuildContext context) {
