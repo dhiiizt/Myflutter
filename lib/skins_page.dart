@@ -83,47 +83,90 @@ class _SkinsPageState extends State<SkinsPage> {
       return false;
     }).toList();
   }
+  
+  ValueNotifier<double> _progress = ValueNotifier(0.0);
+ValueNotifier<String> _stageLabel = ValueNotifier('Menyiapkan...');
 
-// 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
+// 🔹 Dialog progress dengan bar + teks
 Future<void> _showProgressDialog() async {
+  _progress.value = 0.0;
+  _stageLabel.value = 'Menyiapkan...';
+
   showCupertinoDialog(
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return CupertinoAlertDialog(
-        title: const Text(
-          'Mohon tunggu...',
-          style: TextStyle(
-            fontFamily: 'Jost',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            children: const [
-              CupertinoActivityIndicator(radius: 12),
-              SizedBox(height: 16),
-              Text(
-                'Sedang mengunduh dan memproses file...',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Jost',
-                  fontSize: 15,
+      return ValueListenableBuilder<double>(
+        valueListenable: _progress,
+        builder: (context, progressValue, _) {
+          return ValueListenableBuilder<String>(
+            valueListenable: _stageLabel,
+            builder: (context, stageText, _) {
+              final percent =
+                  (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
+
+              return CupertinoAlertDialog(
+                title: const Text(
+                  'Mohon tunggu...',
+                  style: TextStyle(
+                    fontFamily: 'Jost',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                content: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 🔹 Progress bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progressValue.clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            CupertinoColors.activeBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 🔹 Label tahap
+                      Text(
+                        stageText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 🔹 Persentase angka
+                      Text(
+                        '$percent%',
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       );
     },
   );
 }
 
-// 🔹 Fungsi untuk menutup dialog progress
 void _hideProgressDialog() {
   if (Navigator.canPop(context)) {
-    Navigator.pop(context);
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }
 
@@ -167,65 +210,66 @@ void _hideProgressDialog() {
             ? const Center(child: CircularProgressIndicator())
             : SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12.0, vertical: 8.0),
-                  child: Column(
-                    children: [
-                      // 🔹 Filter role
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: getRoles()
-                              .map(
-                                (r) => Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 4.0),
-                                  child: ChoiceChip(
-                                    label: Text(r),
-                                    selected: selectedRole == r,
-                                    onSelected: (_) =>
-                                        setState(() => selectedRole = r),
-                                    selectedColor: colorScheme.primary,
-                                    backgroundColor:
-                                        colorScheme.primaryContainer,
-                                    labelStyle: TextStyle(
-                                      color: selectedRole == r
-                                          ? Colors.white
-                                          : Colors.black87,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 🔹 GridView Hero
-                      Expanded(
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 0.62,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemCount: filteredHeroes.length,
-                          itemBuilder: (context, index) {
-                            final hero = filteredHeroes[index];
-                            return HeroCard(
-                              hero: hero,
-                              colorScheme: colorScheme,
-                              onTap: () => _showHeroSheet(context, hero),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // 🔹 Filter role
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: getRoles()
+              .map(
+                (r) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: Text(r),
+                    selected: selectedRole == r,
+                    onSelected: (_) => setState(() => selectedRole = r),
+                    selectedColor: colorScheme.primary,
+                    backgroundColor: colorScheme.primaryContainer,
+                    labelStyle: TextStyle(
+                      color: selectedRole == r
+                          ? Colors.white
+                          : Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              )
+              .toList(),
+        ),
+      ),
+
+      const SizedBox(height: 8), // 🔹 Jarak antara chip & grid
+
+      // 🔹 GridView Hero
+      Expanded(
+        child: GridView.builder(
+          padding: const EdgeInsets.only(bottom: 8), // biar gak nempel bawah
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,          // 3 kolom
+            childAspectRatio: 0.60,     // 🔹 ubah dari 0.62 → biar proporsional (lebih pendek dikit)
+            crossAxisSpacing: 8,       // jarak horizontal antar card
+            mainAxisSpacing: 8,         // 🔹 jarak vertikal antar baris (lebih rapat, rapi)
+          ),
+          itemCount: filteredHeroes.length,
+          itemBuilder: (context, index) {
+            final hero = filteredHeroes[index];
+            return Align(
+              alignment: Alignment.center,
+              child: HeroCard(
+                hero: hero,
+                colorScheme: colorScheme,
+                onTap: () => _showHeroSheet(context, hero),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  ),
+),
               ),
       ),
     );
@@ -248,55 +292,60 @@ void _hideProgressDialog() {
         return Padding(
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(
-                        imageUrl: hero['image'] ?? '',
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        fadeInDuration: const Duration(milliseconds: 300),
-                        placeholder: (context, url) =>
-                            Container(color: Colors.black12),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(hero['name'] ?? '',
-                              style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black)),
-                          Text(rolesText,
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ],
+ child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Row(
+      children: [
+        Transform.scale(
+  scaleY: 1.0, // tetap gepeng kalau mau
+  child: ClipOval(
+    child: CachedNetworkImage(
+      imageUrl: hero['icon'] ?? '',
+      width: 70,
+      height: 70,
+      fit: BoxFit.cover,
+      alignment: Alignment.topCenter,
+      fadeInDuration: const Duration(milliseconds: 300),
+      placeholder: (context, url) => Container(color: Colors.black12),
+      errorWidget: (context, url, error) => const Icon(Icons.error),
+    ),
+  ),
+),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                hero['name'] ?? '',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-                const SizedBox(height: 20),
+              ),
+              Text(
+                rolesText,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(height: 20),
 
-                if ((hero['official_skins'] as List?)?.isNotEmpty ?? false)
-                  _skinSection(
-                      context, 'Official Skin', hero['official_skins'], true),
+    if ((hero['official_skins'] as List?)?.isNotEmpty ?? false)
+      _skinSection(context, 'Official Skin', hero['official_skins'], true),
 
-                if ((hero['upgrade_skins'] as List?)?.isNotEmpty ?? false)
-                  _skinSection(
-                      context, 'Upgrade Skin', hero['upgrade_skins'], false),
-              ],
-            ),
+    if ((hero['upgrade_skins'] as List?)?.isNotEmpty ?? false)
+      _skinSection(context, 'Upgrade Skin', hero['upgrade_skins'], false),
+  ],
+),
           ),
         );
       },
@@ -427,9 +476,31 @@ void _hideProgressDialog() {
 
     await _showProgressDialog();
 
-    final result = await DownloadManagerHelper.handleDownloadAndInstall(url);
+  // ✅ gunakan (stage, progress)
+  final result = await DownloadManagerHelper.handleDownloadAndInstall(
+  url,
+  onProgress: (stage, progress) {
+    switch (stage) {
+      case 'download':
+        _stageLabel.value = 'Mengunduh file...';
+        break;
+      case 'extract':
+        _stageLabel.value = 'Menganalisa file...';
+        break;
+      case 'move':
+        _stageLabel.value = 'Mengekstrak file...';
+        break;
+      default:
+        _stageLabel.value = 'Memproses...';
+        break;
+    }
 
-    _hideProgressDialog();
+    // update progress UI
+    _progress.value = progress;
+  },
+);
+
+_hideProgressDialog();
 
     _scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
@@ -456,14 +527,16 @@ class HeroCard extends StatelessWidget {
     required this.onTap,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final roleData = hero['role'];
-    final rolesText =
-        roleData is List ? roleData.join(' / ') : (roleData?.toString() ?? '');
+@override
+Widget build(BuildContext context) {
+  final roleData = hero['role'];
+  final rolesText =
+      roleData is List ? roleData.join(' / ') : (roleData?.toString() ?? '');
 
-    return GestureDetector(
-      onTap: onTap,
+  return GestureDetector(
+    onTap: onTap,
+    child: Transform.scale(
+      scaleY: 1.0, // 👉 0.95 kalau mau sedikit aja gepeng
       child: ClipRRect(
         borderRadius: BorderRadius.circular(5),
         child: Stack(
@@ -483,7 +556,7 @@ class HeroCard extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7)
+                    Colors.black.withOpacity(0.7),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -507,14 +580,18 @@ class HeroCard extends StatelessWidget {
               bottom: 10,
               child: Text(
                 rolesText,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class SkinCard extends StatelessWidget {
@@ -549,11 +626,11 @@ class SkinCard extends StatelessWidget {
                     ),
                     if (skin['icon'] != null)
                       Positioned(
-                        right: 8,
-                        top: 8,
+                        right: 4,
+                        top: 4,
                         child: Container(
-                          width: 36,
-                          height: 36,
+                          width: 60,
+                          height: 60,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0),
                             borderRadius: BorderRadius.circular(8),

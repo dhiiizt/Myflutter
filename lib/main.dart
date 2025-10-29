@@ -12,10 +12,14 @@ import 'skins_page.dart';
 import 'emote_page.dart';
 import 'recall_page.dart';
 import 'config_page.dart';
+import 'hero_rank_page.dart';
 import '/helpers/download_manager_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 void main() {
+WidgetsFlutterBinding.ensureInitialized();
+  StorageHelper.initChannelListener();
   runApp(const MyApp());
 }
 
@@ -224,8 +228,8 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
 }
 
   final List<String> ToolbarImages = [
-    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Julian_(Megumi_Fushiguro).jpg',
-    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Alpha_(Revenant_of_Roses).jpg',
+    'https://akmweb.youngjoygame.com/web/gms/image/d2eb31df3b8531be30ecde9f9e9c2895.jpeg',
+    'https://akmweb.youngjoygame.com/web/gms/image/d2eb31df3b8531be30ecde9f9e9c2895.jpeg',
   ];
 
   final List<Map<String, String>> features = [
@@ -233,31 +237,31 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
       'title': 'Unlock All Skins',
       'subtitle': 'All skin role unlock',
       'icon':
-          'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Aldous_(Mistbender_Aldous).jpg'
+          'https://akmweb.youngjoygame.com/web/gms/image/9ea138369ca4a37b4806ac64998df054.webp'
     },
     {
       'title': 'Unlock Emotes',
       'subtitle': '33 Available Emotes',
       'icon':
-          'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Aldous_(Mistbender_Aldous).jpg'
+          'https://akmweb.youngjoygame.com/web/gms/image/10cf23ade94859fd7f6a877c828c0131.webp'
     },
     {
       'title': 'Unlock Recalls',
       'subtitle': '25 Available Recalls',
       'icon':
-          'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Aldous_(Mistbender_Aldous).jpg'
+          'https://akmweb.youngjoygame.com/web/gms/image/3a7693b9a565b4e1d67d57ae73eb5297.webp'
     },
     {
       'title': 'Drone View',
       'subtitle': 'Vertical/Horizontal Available',
       'icon':
-          'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Aldous_(Mistbender_Aldous).jpg'
+          'https://akmweb.youngjoygame.com/web/gms/image/1bea09e43f6b02845de97af863c53da5.webp'
     },
     {
-      'title': 'Configuration',
-      'subtitle': 'Games mode api',
+      'title': 'Hero Ranking',
+      'subtitle': 'Hero Strength Ranking',
       'icon':
-          'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Fighter/Aldous_(Mistbender_Aldous).jpg'
+          'https://akmweb.youngjoygame.com/web/gms/image/adaf737c13d48204dc39f4b48de91ac8.webp'
     },
   ];
 
@@ -273,45 +277,89 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
   }
   
 // 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
+ValueNotifier<double> _progress = ValueNotifier(0.0);
+ValueNotifier<String> _stageLabel = ValueNotifier('Menyiapkan...');
+
+// 🔹 Dialog progress dengan bar + teks
 Future<void> _showProgressDialog() async {
+  _progress.value = 0.0;
+  _stageLabel.value = 'Menyiapkan...';
+
   showCupertinoDialog(
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return CupertinoAlertDialog(
-        title: const Text(
-          'Mohon tunggu...',
-          style: TextStyle(
-            fontFamily: 'Jost',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            children: const [
-              CupertinoActivityIndicator(radius: 12),
-              SizedBox(height: 16),
-              Text(
-                'Sedang mengunduh dan memproses file...',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Jost',
-                  fontSize: 15,
+      return ValueListenableBuilder<double>(
+        valueListenable: _progress,
+        builder: (context, progressValue, _) {
+          return ValueListenableBuilder<String>(
+            valueListenable: _stageLabel,
+            builder: (context, stageText, _) {
+              final percent =
+                  (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
+
+              return CupertinoAlertDialog(
+                title: const Text(
+                  'Mohon tunggu...',
+                  style: TextStyle(
+                    fontFamily: 'Jost',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                content: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 🔹 Progress bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progressValue.clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            CupertinoColors.activeBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 🔹 Label tahap
+                      Text(
+                        stageText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 🔹 Persentase angka
+                      Text(
+                        '$percent%',
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       );
     },
   );
 }
 
-// 🔹 Fungsi untuk menutup dialog progress
 void _hideProgressDialog() {
   if (Navigator.canPop(context)) {
-    Navigator.pop(context);
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }
 
@@ -641,11 +689,31 @@ if (snapshot.hasError) {
   // 🔹 tampilkan dialog loading
   await _showProgressDialog();
 
-  // 🔹 jalankan proses download & install
-  final ok = await DownloadManagerHelper.handleDownloadAndInstall(url);
+  // ✅ gunakan (stage, progress)
+  final ok = await DownloadManagerHelper.handleDownloadAndInstall(
+  url,
+  onProgress: (stage, progress) {
+    switch (stage) {
+      case 'download':
+        _stageLabel.value = 'Mengunduh file...';
+        break;
+      case 'extract':
+        _stageLabel.value = 'Menganalisa file...';
+        break;
+      case 'move':
+        _stageLabel.value = 'Mengekstrak file...';
+        break;
+      default:
+        _stageLabel.value = 'Memproses...';
+        break;
+    }
 
-  // 🔹 tutup dialog
-  _hideProgressDialog();
+    // update progress UI
+    _progress.value = progress;
+  },
+);
+
+_hideProgressDialog();
 
   // 🔹 tampilkan hasil download
   ScaffoldMessenger.of(context).showSnackBar(
@@ -674,55 +742,103 @@ if (snapshot.hasError) {
                               ),
                             ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              ClipRRect(
-                                borderRadius:
-                                    const BorderRadius.vertical(top: Radius.circular(16)),
-                                child: CachedNetworkImage(
-                                  imageUrl: hero['image'],
-                                  height: 140,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      Container(height: 140, color: Colors.grey[300]),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        if (hero['role_icon'] != null)
-                                          Image.network(hero['role_icon'], width: 18, height: 18),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          hero['hero_name'] ?? 'Unknown',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      hero['skin_name'] ?? '',
-                                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      hero['role'] ?? '',
-                                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                              child: Column(
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+    Stack(
+      children: [
+        // 🔹 Gambar utama hero
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: CachedNetworkImage(
+            imageUrl: hero['image'],
+            height: 140,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) =>
+                Container(height: 140, color: Colors.grey[300]),
+          ),
+        ),
+
+                
+        // 🔹 Overlay icon di kanan atas (jika ada)
+        if (hero['overlay_icon'] != null && hero['overlay_icon'].isNotEmpty)
+          Positioned(
+            top: 0,
+            right: 2,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: Image.network(
+                hero['overlay_icon'],
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+      ],
+    ),
+
+    // 🔹 Info hero di bawah gambar
+    Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (hero['role_icon'] != null)
+                Container(
+                  width: 24,
+                  height: 24,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF1A3E6E), // Navy tua
+                        Color(0xFFE6ECF3), // Putih lembut
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        offset: Offset(1, 2),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Image.network(
+                    hero['role_icon'],
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              const SizedBox(width: 6),
+              Text(
+                hero['hero_name'] ?? 'Unknown',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            hero['skin_name'] ?? '',
+            style: TextStyle(color: Colors.grey[700], fontSize: 12),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            hero['role'] ?? '',
+            style: TextStyle(color: Colors.grey[600], fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
                         ),
                       );
                     },
@@ -731,6 +847,7 @@ if (snapshot.hasError) {
               },
             ),
           ),
+          
 
           // 🔹 Text “More Feature” di kanan + Divider full bawah
           SliverToBoxAdapter(
@@ -780,11 +897,17 @@ if (snapshot.hasError) {
                     ),
                     color: colorScheme.surface,
                     child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            CachedNetworkImageProvider(feature['icon']!),
-                        radius: 26,
-                      ),
+                      leading: ClipRRect(
+  borderRadius: BorderRadius.circular(10),
+  child: CachedNetworkImage(
+    imageUrl: feature['icon']!,
+    width: 52,
+    height: 52,
+    fit: BoxFit.cover,
+    placeholder: (context, url) => Container(color: Colors.transparent),
+    errorWidget: (context, url, error) => const Icon(Icons.error),
+  ),
+),
                       title: Text(
                         feature['title']!,
                         style: TextStyle(
@@ -830,10 +953,10 @@ if (snapshot.hasError) {
           context,
           MaterialPageRoute(builder: (context) => const DronePage()),
         );
-      } else if (title == 'Configuration') {
+      } else if (title == 'Hero Ranking') {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ConfigPage()),
+          MaterialPageRoute(builder: (context) => const HeroRankPage()),
         );
       }
     },

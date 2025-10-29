@@ -46,47 +46,90 @@ class _DronePageState extends State<DronePage> {
       setState(() => _loading = false);
     }
   }
+  
+  ValueNotifier<double> _progress = ValueNotifier(0.0);
+ValueNotifier<String> _stageLabel = ValueNotifier('Menyiapkan...');
 
-// 🔹 Fungsi untuk menampilkan dialog loading modern (Cupertino style)
+// 🔹 Dialog progress dengan bar + teks
 Future<void> _showProgressDialog() async {
+  _progress.value = 0.0;
+  _stageLabel.value = 'Menyiapkan...';
+
   showCupertinoDialog(
     context: context,
     barrierDismissible: false,
     builder: (context) {
-      return CupertinoAlertDialog(
-        title: const Text(
-          'Mohon tunggu...',
-          style: TextStyle(
-            fontFamily: 'Jost',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            children: const [
-              CupertinoActivityIndicator(radius: 12),
-              SizedBox(height: 16),
-              Text(
-                'Sedang mengunduh dan memproses file...',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Jost',
-                  fontSize: 15,
+      return ValueListenableBuilder<double>(
+        valueListenable: _progress,
+        builder: (context, progressValue, _) {
+          return ValueListenableBuilder<String>(
+            valueListenable: _stageLabel,
+            builder: (context, stageText, _) {
+              final percent =
+                  (progressValue * 100).clamp(0, 100).toStringAsFixed(0);
+
+              return CupertinoAlertDialog(
+                title: const Text(
+                  'Mohon tunggu...',
+                  style: TextStyle(
+                    fontFamily: 'Jost',
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                content: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 🔹 Progress bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progressValue.clamp(0.0, 1.0),
+                          minHeight: 8,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            CupertinoColors.activeBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 🔹 Label tahap
+                      Text(
+                        stageText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // 🔹 Persentase angka
+                      Text(
+                        '$percent%',
+                        style: const TextStyle(
+                          fontFamily: 'Jost',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       );
     },
   );
 }
 
-// 🔹 Fungsi untuk menutup dialog progress
 void _hideProgressDialog() {
   if (Navigator.canPop(context)) {
-    Navigator.pop(context);
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }
 
@@ -249,13 +292,34 @@ void _hideProgressDialog() {
     // 🔹 Jika user tidak menekan "Ya", hentikan proses
     if (confirm != true) return;
 
-    // 🔹 Tampilkan dialog loading
-    await _showProgressDialog();
+// 🔹 Tampilkan dialog loading
+await _showProgressDialog();
 
-    final ok = await DownloadManagerHelper.handleDownloadAndInstall(url);
+// ✅ gunakan (stage, progress)
+final ok = await DownloadManagerHelper.handleDownloadAndInstall(
+  url,
+  onProgress: (stage, progress) {
+    switch (stage) {
+      case 'download':
+        _stageLabel.value = 'Mengunduh file...';
+        break;
+      case 'extract':
+        _stageLabel.value = 'Menganalisa file...';
+        break;
+      case 'move':
+        _stageLabel.value = 'Mengekstrak file...';
+        break;
+      default:
+        _stageLabel.value = 'Memproses...';
+        break;
+    }
 
-    // 🔹 Tutup dialog setelah selesai
-    _hideProgressDialog();
+    // update progress UI
+    _progress.value = progress;
+  },
+);
+
+_hideProgressDialog();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

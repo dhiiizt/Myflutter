@@ -52,4 +52,22 @@ class StorageHelper {
       return false;
     }
   }
+  
+  static void Function(double progress)? _onMoveProgress;
+
+static void initChannelListener() {
+  _channel.setMethodCallHandler((call) async {
+    switch (call.method) {
+      case 'onMoveProgress':
+        final progress = (call.arguments as num).toDouble();
+        _onMoveProgress?.call(progress);
+        break;
+    }
+  });
+}
+
+static void setMoveProgressListener(void Function(double progress)? listener) {
+  _onMoveProgress = listener;
+}
+  
 }

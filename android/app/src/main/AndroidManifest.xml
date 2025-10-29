@@ -3,14 +3,8 @@
 
     <!-- INTERNET permission harus di luar <application> -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-    <!-- ✅ Izin untuk deteksi package lain -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-
     <!-- ✅ Izin Shizuku API versi terbaru -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
@@ -59,13 +53,23 @@
         <package android:name="com.mobile.legends.hwag" />
 
         <!-- Akses ke Shizuku -->
-        <package android:name="moe.shizuku.manager" />
         <package android:name="moe.shizuku.privileged.api" />
         
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        
     </queries>
 
 </manifest>

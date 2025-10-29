@@ -18,6 +18,8 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.Semaphore
+import kotlinx.coroutines.*
 
 class MainActivity : FlutterActivity() {
 
@@ -81,24 +83,29 @@ class MainActivity : FlutterActivity() {
                 "copyDirectoryToSAF" -> {
                     val sourceDir = call.argument<String>("sourceDir")
                     val treeUriStr = call.argument<String>("treeUri")
-
+                
                     if (sourceDir == null || treeUriStr == null) {
                         result.success(false)
                         return@setMethodCallHandler
                     }
-
-                    try {
-                        val treeUri = Uri.parse(treeUriStr)
-                        val targetTree = DocumentFile.fromTreeUri(this, treeUri)
-                        if (targetTree != null && targetTree.canWrite()) {
-                            copyFolderWithSAF(File(sourceDir), targetTree)
-                            result.success(true)
-                        } else {
-                            result.success(false)
+                
+                    GlobalScope.launch(Dispatchers.IO) {
+                        var success = false
+                        try {
+                            val treeUri = Uri.parse(treeUriStr)
+                            val targetTree = DocumentFile.fromTreeUri(this@MainActivity, treeUri)
+                            if (targetTree != null && targetTree.canWrite()) {
+           
+                                copyFolderFast(File(sourceDir), targetTree, this@MainActivity)
+                                success = true
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        result.success(false)
+                
+                        withContext(Dispatchers.Main) {
+                            result.success(success)
+                        }
                     }
                 }
 
@@ -178,33 +185,95 @@ class MainActivity : FlutterActivity() {
     // ==========================================================
     // =============== Copy folder dengan SAF ===================
     // ==========================================================
-private fun copyFolderWithSAF(source: File, targetTree: DocumentFile) {
-    source.listFiles()?.forEach { file ->
-        if (file.isDirectory) {
-            val safeDirName = sanitizeFileName(file.name)
-            var subDir = targetTree.findFile(safeDirName)
-            if (subDir == null || !subDir.isDirectory) {
-                subDir = targetTree.createDirectory(safeDirName)
-            }
-            subDir?.let { copyFolderWithSAF(file, it) }
-        } else if (file.isFile) {
-            val safeFileName = sanitizeFileName(file.name)
-            targetTree.findFile(safeFileName)?.delete()
-            val newFile = targetTree.createFile("application/octet-stream", safeFileName)
-            newFile?.let {
-                contentResolver.openOutputStream(it.uri)?.use { output ->
-                    file.inputStream().use { input ->
-                        input.copyTo(output)
+private suspend fun copyFolderFast(source: File, targetTree: DocumentFile, context: Context) {
+    runBlocking {
+        val maxParallel = 6 // sesuaikan dengan kemampuan HP
+        val sem = Semaphore(maxParallel)
+        val scope = CoroutineScope(Dispatchers.IO)
+
+        // 🔹 1️⃣ Hitung semua file
+        val allFiles = source.walkTopDown().filter { it.isFile }.toList()
+        val totalBytesAllFiles = allFiles.sumOf { it.length() }.toDouble().coerceAtLeast(1.0)
+        var totalWritten = 0L
+
+        suspend fun copyDirRec(srcDir: File, dstDir: DocumentFile) {
+            if (!dstDir.isDirectory) return
+
+            // 📋 Cache semua file & folder di level ini
+            val existingFiles = dstDir.listFiles()
+                .associateBy { it.name ?: "" }
+
+            // 🔁 Copy semua file di folder ini (paralel)
+            val files = srcDir.listFiles()?.filter { it.isFile } ?: emptyList()
+            val jobs = mutableListOf<Deferred<Unit>>()
+
+            for (file in files) {
+                val job = scope.async {
+                    sem.acquire()
+                    try {
+                        val safeName = sanitizeFileName(file.name ?: "unnamed")
+                        existingFiles[safeName]?.delete()
+                        val destFile = dstDir.createFile("application/octet-stream", safeName)
+                            ?: return@async
+
+                        FileInputStream(file).use { input ->
+                            context.contentResolver.openOutputStream(destFile.uri, "w")?.use { output ->
+                                val buf = ByteArray(64 * 1024)
+                                var read: Int
+                                while (input.read(buf).also { read = it } != -1) {
+                                    output.write(buf, 0, read)
+
+                                    // 🔹 Update total written global
+                                    totalWritten += read
+                                    val overallProgress =
+                                        (totalWritten / totalBytesAllFiles).coerceIn(0.0, 1.0)
+
+                                    // 🔹 Kirim progress ke Flutter
+                                    Handler(Looper.getMainLooper()).post {
+                                        MethodChannel(
+                                            flutterEngine!!.dartExecutor.binaryMessenger,
+                                            "com.example.getapp/native"
+                                        ).invokeMethod("onMoveProgress", overallProgress)
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        sem.release()
                     }
                 }
+                jobs.add(job)
+            }
+
+            jobs.awaitAll()
+
+            // 📁 Rekursi ke subfolder
+            val subDirs = srcDir.listFiles()?.filter { it.isDirectory } ?: emptyList()
+            for (folder in subDirs) {
+                val safeName = sanitizeFileName(folder.name ?: "unnamed")
+                val subTarget = existingFiles[safeName]?.takeIf { it.isDirectory }
+                    ?: dstDir.createDirectory(safeName) ?: continue
+                copyDirRec(folder, subTarget)
+            }
+        }
+
+        try {
+            copyDirRec(source, targetTree)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            scope.cancel()
+            // pastikan progress terakhir 100%
+            Handler(Looper.getMainLooper()).post {
+                MethodChannel(
+                    flutterEngine!!.dartExecutor.binaryMessenger,
+                    "com.example.getapp/native"
+                ).invokeMethod("onMoveProgress", 1.0)
             }
         }
     }
 }
 
-// ===============================
-// Hapus karakter illegal untuk SAF
-// ===============================
 private fun sanitizeFileName(name: String): String {
     return name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
 }
@@ -230,7 +299,7 @@ private fun sanitizeFileName(name: String): String {
                     "a/document/primary%3AAndroid%2Fdat$zwj" +
                     "a%2F"
 
-        val initialUri = Uri.parse(baseUri + Uri.encode(packageName) + "%2F")
+        val initialUri = Uri.parse(baseUri + Uri.encode(packageName) + "%2Ffiles%2Fdragon2017%2Fassets%2F")
 
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         intent.putExtra("android.provider.extra.INITIAL_URI", initialUri)
@@ -274,7 +343,7 @@ private fun sanitizeFileName(name: String): String {
             return try {
                 var docId = DocumentsContract.getTreeDocumentId(uri) ?: return false
                 docId = docId.replace("\u2060", "").trim()
-                val expected = "primary:Android/data/$targetPkg"
+                val expected = "primary:Android/data/$targetPkg/files/dragon2017/assets"
                 docId == expected || docId == "$expected/"
             } catch (e: Exception) {
                 false
