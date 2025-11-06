@@ -4,6 +4,10 @@ import 'package:http/http.dart' as http;
 import '/helpers/download_manager_helper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'main.dart'; // supaya bisa akses flutterLocalNotificationsPlugin
+import 'dart:io' show Platform;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class SkinsPage extends StatefulWidget {
   const SkinsPage({super.key});
@@ -170,6 +174,117 @@ void _hideProgressDialog() {
   }
 }
 
+InterstitialAd? _interstitialAd;
+
+void _loadInterstitialAd() {
+  InterstitialAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID iklan TEST
+    request: const AdRequest(),
+    adLoadCallback: InterstitialAdLoadCallback(
+      onAdLoaded: (ad) {
+        _interstitialAd = ad;
+        debugPrint('✅ Iklan Interstitial berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _interstitialAd = null;
+        debugPrint('❌ Gagal memuat iklan: $error');
+      },
+    ),
+  );
+}
+
+void _showInterstitialAd(VoidCallback onAdClosed) {
+  if (_interstitialAd != null) {
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadInterstitialAd(); // 🔁 Siapkan iklan berikutnya
+        onAdClosed(); // ✅ lanjut ke aksi berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadInterstitialAd();
+        onAdClosed(); // tetap lanjut walau gagal tampil
+        debugPrint('⚠️ Gagal menampilkan iklan: $error');
+      },
+    );
+
+    _interstitialAd!.show();
+    _interstitialAd = null; // ❗ jangan tampilkan dua kali
+  } else {
+    debugPrint('⚠️ Iklan belum siap, lanjut saja');
+    onAdClosed();
+  }
+}
+
+RewardedAd? _rewardedAd;
+
+void _loadRewardedAd() {
+  RewardedAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/5224354917', // ✅ ID test Rewarded Ad
+    request: const AdRequest(),
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (ad) {
+        _rewardedAd = ad;
+        debugPrint('✅ Iklan Rewarded berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _rewardedAd = null;
+        debugPrint('❌ Gagal memuat Rewarded Ad: $error');
+      },
+    ),
+  );
+}
+
+void _showRewardedAd(VoidCallback onRewardEarned) {
+  if (_rewardedAd != null) {
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadRewardedAd(); // 🔁 Siapkan iklan berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadRewardedAd();
+        debugPrint('⚠️ Gagal menampilkan iklan Rewarded: $error');
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        debugPrint('🎁 Pengguna mendapat reward: ${reward.amount} ${reward.type}');
+        onRewardEarned(); // ✅ jalankan aksi reward di sini
+      },
+    );
+
+    _rewardedAd = null;
+  } else {
+    debugPrint('⚠️ Rewarded Ad belum siap');
+  }
+}
+
+Future<void> showNotification(String title, String body) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'download_channel',
+    'Download Notifications',
+    channelDescription: 'Status download dan instalasi',
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: '@mipmap/ic_launcher',
+  );
+
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    0, // ID notifikasi
+    title,
+    body,
+    platformChannelSpecifics,
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme(
@@ -195,7 +310,7 @@ void _hideProgressDialog() {
         appBar: AppBar(
           backgroundColor: colorScheme.primaryContainer,
           title: const Text(
-            'List Skins',
+            'Skin List',
             style: TextStyle(
               color: Colors.black,
               fontSize: 20,
@@ -340,7 +455,7 @@ void _hideProgressDialog() {
     const SizedBox(height: 20),
 
     if ((hero['official_skins'] as List?)?.isNotEmpty ?? false)
-      _skinSection(context, 'Official Skin', hero['official_skins'], true),
+      _skinSection(context, 'Skin', hero['official_skins'], true),
 
     if ((hero['upgrade_skins'] as List?)?.isNotEmpty ?? false)
       _skinSection(context, 'Upgrade Skin', hero['upgrade_skins'], false),
@@ -428,91 +543,107 @@ void _hideProgressDialog() {
   }
 
   Future<void> _confirmDownload(
-    BuildContext context,
-    Map<String, dynamic> skin,
-  ) async {
-    final confirm = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text(
-          'Notice!',
-          style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            'Apakah kamu ingin mengunduh dan memasang "${skin['name']}"?',
-            style: const TextStyle(fontFamily: 'Jost'),
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Download',
-              style: TextStyle(color: CupertinoColors.systemBlue),
-            ),
-          ),
-        ],
+  BuildContext context,
+  Map<String, dynamic> skin,
+) async {
+  final confirm = await showCupertinoDialog<bool>(
+    context: context,
+    builder: (context) => CupertinoAlertDialog(
+      title: const Text(
+        'Notice!',
+        style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
       ),
+      content: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          'Apakah kamu ingin mengunduh dan memasang "${skin['name']}"?',
+          style: const TextStyle(fontFamily: 'Jost'),
+        ),
+      ),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        CupertinoDialogAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text(
+            'Download',
+            style: TextStyle(color: CupertinoColors.systemBlue),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm != true) return;
+
+  final url = skin['download_url'];
+  final skinName = skin['name'] ?? 'Unknown Skin';
+
+  if (url == null || url.isEmpty) {
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(content: Text('Data tidak ditemukan!')),
     );
+    return;
+  }
 
-    if (confirm != true) return;
+  // 🔹 Cek dulu apakah iklan siap
+  if (_rewardedAd == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('⚠️ Iklan belum siap, coba lagi nanti.')),
+    );
+    _loadRewardedAd(); // muat ulang jika belum siap
+    return;
+  }
 
-    final url = skin['download_url'];
-    final skinName = skin['name'] ?? 'Unknown Skin';
+  // 🔹 Tampilkan Rewarded Ad sebelum download
+  _showRewardedAd(() async {
+    debugPrint('Reward didapat, mulai proses download skin...');
 
-    if (url == null || url.isEmpty) {
-      _scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(content: Text('URL tidak ditemukan di data JSON!')),
-      );
-      return;
-    }
-
+    // 🔹 Tampilkan dialog loading
     await _showProgressDialog();
 
-  // ✅ gunakan (stage, progress)
-  final result = await DownloadManagerHelper.handleDownloadAndInstall(
-  url,
-  onProgress: (stage, progress) {
-    switch (stage) {
-      case 'download':
-        _stageLabel.value = 'Mengunduh file...';
-        break;
-      case 'extract':
-        _stageLabel.value = 'Menganalisa file...';
-        break;
-      case 'move':
-        _stageLabel.value = 'Mengekstrak file...';
-        break;
-      default:
-        _stageLabel.value = 'Memproses...';
-        break;
-    }
+    // ✅ gunakan (stage, progress)
+    final result = await DownloadManagerHelper.handleDownloadAndInstall(
+      url,
+      onProgress: (stage, progress) {
+        switch (stage) {
+          case 'download':
+            _stageLabel.value = 'Mengunduh file...';
+            break;
+          case 'extract':
+            _stageLabel.value = 'Menganalisa file...';
+            break;
+          case 'move':
+            _stageLabel.value = 'Memasang file...';
+            break;
+          default:
+            _stageLabel.value = 'Memproses...';
+            break;
+        }
 
-    // update progress UI
-    _progress.value = progress;
-  },
-);
-
-_hideProgressDialog();
-
-    _scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(
-        content: Text(
-          result
-              ? '✅ Berhasil mengunduh dan memasang $skinName!'
-              : '❌ Gagal mengunduh $skinName!',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
+        // update progress UI
+        _progress.value = progress;
+      },
     );
-  }
+
+    _hideProgressDialog();
+
+    if (result) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+      );
+      await showNotification('Berhasil ✅', 'Skin "$skinName" telah dipasang!');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+      );
+      await showNotification('Gagal ❌', 'Download atau pemasangan skin "$skinName" gagal.');
+    }
+  });
+}
 }
 
 class HeroCard extends StatelessWidget {
@@ -529,7 +660,7 @@ class HeroCard extends StatelessWidget {
 
 @override
 Widget build(BuildContext context) {
-  final roleData = hero['role'];
+  final roleData = hero['title'];
   final rolesText =
       roleData is List ? roleData.join(' / ') : (roleData?.toString() ?? '');
 
@@ -571,7 +702,7 @@ Widget build(BuildContext context) {
                 style: TextStyle(
                   color: colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -582,7 +713,7 @@ Widget build(BuildContext context) {
                 rolesText,
                 style: const TextStyle(
                   color: Colors.white70,
-                  fontSize: 12,
+                  fontSize: 10,
                 ),
               ),
             ),
@@ -623,6 +754,18 @@ class SkinCard extends StatelessWidget {
                           Container(color: Colors.black12),
                       errorWidget: (context, url, error) =>
                           const Icon(Icons.error),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.3),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
                     ),
                     if (skin['icon'] != null)
                       Positioned(

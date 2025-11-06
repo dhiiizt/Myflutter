@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-import 'helpers/download_manager_helper.dart';
+import 'helpers/download_helper.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'main.dart'; // supaya bisa akses flutterLocalNotificationsPlugin
+import 'dart:io' show Platform;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class DronePage extends StatefulWidget {
   const DronePage({super.key});
@@ -133,6 +137,118 @@ void _hideProgressDialog() {
   }
 }
 
+InterstitialAd? _interstitialAd;
+
+void _loadInterstitialAd() {
+  InterstitialAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID iklan TEST
+    request: const AdRequest(),
+    adLoadCallback: InterstitialAdLoadCallback(
+      onAdLoaded: (ad) {
+        _interstitialAd = ad;
+        debugPrint('✅ Iklan Interstitial berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _interstitialAd = null;
+        debugPrint('❌ Gagal memuat iklan: $error');
+      },
+    ),
+  );
+}
+
+void _showInterstitialAd(VoidCallback onAdClosed) {
+  if (_interstitialAd != null) {
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadInterstitialAd(); // 🔁 Siapkan iklan berikutnya
+        onAdClosed(); // ✅ lanjut ke aksi berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadInterstitialAd();
+        onAdClosed(); // tetap lanjut walau gagal tampil
+        debugPrint('⚠️ Gagal menampilkan iklan: $error');
+      },
+    );
+
+    _interstitialAd!.show();
+    _interstitialAd = null; // ❗ jangan tampilkan dua kali
+  } else {
+    debugPrint('⚠️ Iklan belum siap, lanjut saja');
+    onAdClosed();
+  }
+}
+
+RewardedAd? _rewardedAd;
+
+void _loadRewardedAd() {
+  RewardedAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/5224354917', // ✅ ID test Rewarded Ad
+    request: const AdRequest(),
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (ad) {
+        _rewardedAd = ad;
+        debugPrint('✅ Iklan Rewarded berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _rewardedAd = null;
+        debugPrint('❌ Gagal memuat Rewarded Ad: $error');
+      },
+    ),
+  );
+}
+
+void _showRewardedAd(VoidCallback onRewardEarned) {
+  if (_rewardedAd != null) {
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadRewardedAd(); // 🔁 Siapkan iklan berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadRewardedAd();
+        debugPrint('⚠️ Gagal menampilkan iklan Rewarded: $error');
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        debugPrint('🎁 Pengguna mendapat reward: ${reward.amount} ${reward.type}');
+        onRewardEarned(); // ✅ jalankan aksi reward di sini
+      },
+    );
+
+    _rewardedAd = null;
+  } else {
+    debugPrint('⚠️ Rewarded Ad belum siap');
+  }
+}
+
+Future<void> showNotification(String title, String body) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'download_channel',
+    'Download Notifications',
+    channelDescription: 'Status download dan instalasi',
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: '@mipmap/ic_launcher',
+  );
+
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    0, // ID notifikasi
+    title,
+    body,
+    platformChannelSpecifics,
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme(
@@ -155,7 +271,7 @@ void _hideProgressDialog() {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'List Drone',
+          'Drone List',
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,
@@ -247,90 +363,104 @@ void _hideProgressDialog() {
                             ),
                             TextButton.icon(
   onPressed: () async {
-    final url = item['downloadUrl'];
-    if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('URL tidak ditemukan di data JSON!'),
-        ),
-      );
-      return;
-    }
-
-    // 🔹 Tampilkan dialog konfirmasi bergaya iOS
-    final confirm = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text(
-          'Notice!',
-          style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
-        ),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            'Apakah kamu ingin mengunduh dan memasang "${item['title']}"?',
-            style: const TextStyle(fontFamily: 'Jost'),
-          ),
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Download',
-              style: TextStyle(color: CupertinoColors.systemBlue),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    // 🔹 Jika user tidak menekan "Ya", hentikan proses
-    if (confirm != true) return;
-
-// 🔹 Tampilkan dialog loading
-await _showProgressDialog();
-
-// ✅ gunakan (stage, progress)
-final ok = await DownloadManagerHelper.handleDownloadAndInstall(
-  url,
-  onProgress: (stage, progress) {
-    switch (stage) {
-      case 'download':
-        _stageLabel.value = 'Mengunduh file...';
-        break;
-      case 'extract':
-        _stageLabel.value = 'Menganalisa file...';
-        break;
-      case 'move':
-        _stageLabel.value = 'Mengekstrak file...';
-        break;
-      default:
-        _stageLabel.value = 'Memproses...';
-        break;
-    }
-
-    // update progress UI
-    _progress.value = progress;
-  },
-);
-
-_hideProgressDialog();
-
+  final url = item['downloadUrl'];
+  if (url == null || url.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? '✅ Download & pasang berhasil!'
-              : '❌ Gagal download atau pasang!',
+      const SnackBar(content: Text('Data tidak ditemukan!')),
+    );
+    return;
+  }
+
+  // 🔹 Dialog konfirmasi bergaya iOS
+  final confirm = await showCupertinoDialog<bool>(
+    context: context,
+    builder: (context) => CupertinoAlertDialog(
+      title: const Text(
+        'Notice!',
+        style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
+      ),
+      content: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          'Apakah kamu ingin mengunduh dan memasang "${item['title']}"?',
+          style: const TextStyle(fontFamily: 'Jost'),
         ),
       ),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        CupertinoDialogAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text(
+            'Download',
+            style: TextStyle(color: CupertinoColors.systemBlue),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm != true) return;
+
+  // 🔹 Cek dulu apakah Rewarded Ad siap
+  if (_rewardedAd == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('⚠️ Iklan belum siap, coba lagi nanti.')),
     );
-  },
+    _loadRewardedAd(); // coba muat ulang
+    return;
+  }
+
+  // 🔹 Tampilkan Rewarded Ad dulu
+  _showRewardedAd(() async {
+    debugPrint('🎁 Reward didapat, mulai proses download...');
+
+    // 🔹 Tampilkan dialog loading
+    await _showProgressDialog();
+
+    // ✅ Proses utama download & install
+    final ok = await DownloadHelper.handleDownloadAndInstall1(
+      url,
+      onProgress: (stage, progress) {
+        switch (stage) {
+          case 'download':
+            _stageLabel.value = 'Mengunduh file...';
+            break;
+          case 'extract':
+            _stageLabel.value = 'Menganalisa file...';
+            break;
+          case 'move':
+            _stageLabel.value = 'Memasang file...';
+            break;
+          default:
+            _stageLabel.value = 'Memproses...';
+            break;
+        }
+
+        _progress.value = progress;
+      },
+    );
+
+    _hideProgressDialog();
+
+    if (ok) {
+      debugPrint('✅ Proses selesai!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+      );
+      await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
+    } else {
+      debugPrint('❌ Proses gagal.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+      );
+      await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
+    }
+  });
+},
   icon: const Icon(Icons.download),
   label: const Text('Download'),
 ),

@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 
 class ShizukuHelper {
 static const MethodChannel _channel =
-MethodChannel('com.example.getapp/native');
+MethodChannel('com.esa.mlxinjector/native');
 
 /// Mengecek apakah Shizuku tersedia di perangkat
 static Future<bool> isAvailable() async {

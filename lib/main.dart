@@ -15,12 +15,157 @@ import 'config_page.dart';
 import 'hero_rank_page.dart';
 import '/helpers/download_manager_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io' show Platform;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 
-void main() {
-WidgetsFlutterBinding.ensureInitialized();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+    
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();    
+
+Future<void> initNotifications() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  if (Platform.isAndroid) {
+    final androidImpl = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    final granted = await androidImpl?.areNotificationsEnabled();
+    if (granted == false) {
+      await androidImpl?.requestNotificationsPermission();
+    }
+  } else if (Platform.isIOS) {
+    final iosImpl = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+    await iosImpl?.requestPermissions(alert: true, badge: true, sound: true);
+  }
+}
+
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   StorageHelper.initChannelListener();
+
+  // 🔹 Inisialisasi notifikasi
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await initNotifications();
+  
+ /* final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
+await MobileAds.instance.updateRequestConfiguration(config); */
+await MobileAds.instance.initialize();
+
   runApp(const MyApp());
+
+  // 🔹 Jalankan cek izin setelah app tampil
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _checkPermissionsOnStart();
+  });
+}
+
+Future<void> _checkPermissionsOnStart() async {
+  final isAvailable = await ShizukuHelper.isAvailable();
+  final hasPerm = await ShizukuHelper.hasPermission();
+  final shizukuReady = isAvailable && hasPerm;
+  final treeUri = await StorageHelper.getSavedTreeUri();
+
+  // Jika Shizuku aktif ATAU TreeUri sudah tersimpan, jangan tampilkan apa pun
+  if (shizukuReady || (treeUri != null && treeUri.isNotEmpty)) {
+    return;
+  }
+
+  // Pastikan context siap
+  final context = navigatorKey.currentContext;
+  if (context == null) return;
+
+  final choice = await showPermissionDialog(context);
+
+  if (choice == 'shizuku') {
+    await _runTest(context);
+  } else if (choice == 'saf') {
+    final colorScheme = Theme.of(context).colorScheme;
+    await _handleDefaultPermission(context, colorScheme);
+  }
+}
+
+Future<void> _runTest(BuildContext context) async {
+  final ok = await ShizukuHelper.ensurePermission();
+  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+  if (!ok) {
+    scaffoldMessenger.showSnackBar(
+      const SnackBar(content: Text('❌ Shizuku tidak aktif')),
+    );
+    return;
+  }
+
+  scaffoldMessenger.showSnackBar(
+    const SnackBar(content: Text('✅ Shizuku sudah aktif')),
+  );
+}
+
+Future<void> _handleDefaultPermission(
+    BuildContext dialogContext, ColorScheme colorScheme) async {
+  try {
+    final mlPackages = ['com.mobile.legends', 'com.mobile.legends.hwag'];
+    String? validPkg;
+
+    for (final p in mlPackages) {
+      if (await StorageHelper.isAppInstalled(p)) {
+        validPkg = p;
+        break;
+      }
+    }
+
+    final scaffoldMessenger = ScaffoldMessenger.of(dialogContext);
+
+    if (validPkg == null) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('❌ Mobile Legends tidak ditemukan')),
+      );
+      return;
+    }
+
+    final saved = await StorageHelper.getSavedTreeUri();
+    if (saved != null && saved.isNotEmpty) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('✅ Izin default sudah diset')),
+      );
+      return;
+    }
+
+    final pickedUri =
+        await StorageHelper.pickTreeAndSave(packageName: validPkg);
+
+    if (pickedUri == null || pickedUri.isEmpty) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('❌ Izin ditolak')),
+      );
+    } else {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('✅ Izin default diset')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(dialogContext).showSnackBar(
+      SnackBar(content: Text('Terjadi kesalahan: $e')),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -28,6 +173,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  
     final colorScheme = ColorScheme(
   brightness: Brightness.light,
   primary: const Color(0xFF2196F3), // 💙 Biru utama (Blue 500)
@@ -46,7 +192,8 @@ class MyApp extends StatelessWidget {
 );
 
     return MaterialApp(
-      title: 'Neru Injector',
+    navigatorKey: navigatorKey, // ✅
+      title: 'MLX Injector',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Jost',
@@ -107,7 +254,7 @@ class CollapsiblePage extends StatefulWidget {
 class _CollapsiblePageState extends State<CollapsiblePage> {
   String output = '';
 
-  static const MethodChannel _channel = MethodChannel('com.example.getapp/native');
+  static const MethodChannel _channel = MethodChannel('com.esa.mlxinjector/native');
   
   String _output = '';
  
@@ -178,7 +325,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
 
       if (pickedUri == null || pickedUri.isEmpty) {
         scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Permission denied ❌')),
+          const SnackBar(content: Text('Izin ditolak ❌')),
         );
       } else {
         scaffoldMessenger.showSnackBar(
@@ -200,7 +347,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
         title: const Text('Permission'),
         content: const Padding(
           padding: EdgeInsets.only(top: 8.0),
-          child: Text('Please select first'),
+          child: Text('Membutuhkan izin akses ke storage com.mobile.legends, Pilih satu izin yang ingin digunakan'),
         ),
         actions: [
           CupertinoDialogAction(
@@ -228,8 +375,8 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
 }
 
   final List<String> ToolbarImages = [
-    'https://akmweb.youngjoygame.com/web/gms/image/d2eb31df3b8531be30ecde9f9e9c2895.jpeg',
-    'https://akmweb.youngjoygame.com/web/gms/image/d2eb31df3b8531be30ecde9f9e9c2895.jpeg',
+    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251105_232401.png',
+    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251105_232401.png',
   ];
 
   final List<Map<String, String>> features = [
@@ -239,7 +386,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
       'icon':
           'https://akmweb.youngjoygame.com/web/gms/image/9ea138369ca4a37b4806ac64998df054.webp'
     },
-    {
+    /*{
       'title': 'Unlock Emotes',
       'subtitle': '33 Available Emotes',
       'icon':
@@ -250,7 +397,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
       'subtitle': '25 Available Recalls',
       'icon':
           'https://akmweb.youngjoygame.com/web/gms/image/3a7693b9a565b4e1d67d57ae73eb5297.webp'
-    },
+    },*/
     {
       'title': 'Drone View',
       'subtitle': 'Vertical/Horizontal Available',
@@ -363,13 +510,163 @@ void _hideProgressDialog() {
   }
 }
 
+InterstitialAd? _interstitialAd;
+
+void _loadInterstitialAd() {
+  InterstitialAd.load(
+    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+    request: const AdRequest(),
+    adLoadCallback: InterstitialAdLoadCallback(
+      onAdLoaded: (ad) {
+        _interstitialAd = ad;
+        debugPrint('✅ Iklan Interstitial berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _interstitialAd = null;
+        debugPrint('❌ Gagal memuat iklan: $error');
+      },
+    ),
+  );
+}
+
+void _showInterstitialAd(VoidCallback onAdClosed) {
+  if (_interstitialAd != null) {
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadInterstitialAd(); // 🔁 Siapkan iklan berikutnya
+        onAdClosed(); // ✅ lanjut ke aksi berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadInterstitialAd();
+        onAdClosed(); // tetap lanjut walau gagal tampil
+        debugPrint('⚠️ Gagal menampilkan iklan: $error');
+      },
+    );
+
+    _interstitialAd!.show();
+    _interstitialAd = null; // ❗ jangan tampilkan dua kali
+  } else {
+    debugPrint('⚠️ Iklan belum siap, lanjut saja');
+    onAdClosed();
+  }
+}
+
+@override
+void initState() {
+  super.initState();
+
+  // 🔹 Muat Interstitial Ad pertama kali
+  _loadInterstitialAd();
+
+  // 🔹 Muat Rewarded Ad pertama kali
+  _loadRewardedAd();
+  
+  _loadBannerAd();
+}
+
+RewardedAd? _rewardedAd;
+
+void _loadRewardedAd() {
+  RewardedAd.load(
+    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
+    request: const AdRequest(),
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (ad) {
+        _rewardedAd = ad;
+        debugPrint('✅ Iklan Rewarded berhasil dimuat');
+      },
+      onAdFailedToLoad: (error) {
+        _rewardedAd = null;
+        debugPrint('❌ Gagal memuat Rewarded Ad: $error');
+      },
+    ),
+  );
+}
+
+void _showRewardedAd(VoidCallback onRewardEarned) {
+  if (_rewardedAd != null) {
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadRewardedAd(); // 🔁 Siapkan iklan berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadRewardedAd();
+        debugPrint('⚠️ Gagal menampilkan iklan Rewarded: $error');
+      },
+    );
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        debugPrint('🎁 Pengguna mendapat reward: ${reward.amount} ${reward.type}');
+        onRewardEarned(); // ✅ jalankan aksi reward di sini
+      },
+    );
+
+    _rewardedAd = null;
+  } else {
+    debugPrint('⚠️ Rewarded Ad belum siap');
+  }
+}
+
+BannerAd? _bannerAd;
+bool _isBannerAdReady = false;
+
+void _loadBannerAd() {
+  _bannerAd = BannerAd(
+    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
+    request: const AdRequest(),
+    size: AdSize.banner,
+    listener: BannerAdListener(
+      onAdLoaded: (Ad ad) {
+        debugPrint('✅ Iklan Banner berhasil dimuat');
+        setState(() {
+          _isBannerAdReady = true;
+        });
+      },
+      onAdFailedToLoad: (Ad ad, LoadAdError error) {
+        debugPrint('❌ Gagal memuat Banner Ad: $error');
+        _isBannerAdReady = false;
+        ad.dispose();
+      },
+    ),
+  )..load();
+}
+
+Future<void> showNotification(String title, String body) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'download_channel',
+    'Download Notifications',
+    channelDescription: 'Status download dan instalasi',
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: '@mipmap/ic_launcher',
+  );
+
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    0, // ID notifikasi
+    title,
+    body,
+    platformChannelSpecifics,
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      drawer: buildDrawer(context, colorScheme),
-      body: CustomScrollView(
+  drawer: buildDrawer(context, colorScheme),
+  body: Stack(
+    children: [
+      CustomScrollView(
         slivers: [
           // 🔹 AppBar (kembali dengan icon More & fungsinya)
           SliverAppBar(
@@ -386,27 +683,13 @@ void _hideProgressDialog() {
               IconButton(
   icon: Icon(Icons.monetization_on_outlined, color: colorScheme.primary),
   onPressed: () async {
-    final result = await showPermissionDialog(context);
-
-    if (result == 'saf') {
-      // 🔹 Jalankan logika SAF di sini
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('SAF permission dipilih')),
-      );
-      // contoh: await handleSAFPermission();
-
-    } else if (result == 'shizuku') {
-      // 🔹 Jalankan logika Shizuku di sini
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shizuku permission dipilih')),
-      );
-      // contoh: await handleShizukuPermission();
-
+    const url = 'https://saweria.co/esaneru';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      // 🔹 Dibatalkan
-     /* ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dialog dibatalkan')),
-      ); */
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka link')),
+      );
     }
   },
 ),
@@ -429,7 +712,7 @@ void _hideProgressDialog() {
                           ),
                         ),
                         message: const Text(
-                          'Pilih satu izin yang ingin digunakan',
+                          'Membutuhkan izin akses ke storage com.mobile.legends, Pilih satu izin yang ingin digunakan',
                           style: TextStyle(fontSize: 14),
                         ),
                         actions: [
@@ -449,7 +732,7 @@ void _hideProgressDialog() {
                                     ),
                                   ),
                                   content: const Text(
-                                    'Are you sure you want to use Default Permission?',
+                                    'Apakah Anda yakin ingin menggunakan Izin Default??',
                                     style: TextStyle(fontSize: 14),
                                   ),
                                   actions: [
@@ -488,7 +771,7 @@ void _hideProgressDialog() {
                                     ),
                                   ),
                                   content: const Text(
-                                    'Are you sure you want to use Shizuku Permission?',
+                                    'Apakah Anda yakin ingin menggunakan Izin Shizuku??',
                                     style: TextStyle(fontSize: 14),
                                   ),
                                   actions: [
@@ -535,10 +818,7 @@ void _hideProgressDialog() {
                       children: [
                         const SizedBox(height: 10),
                         const Text(
-                          'MLX Tools adalah aplikasi yang dirancang untuk membantu pengguna '
-                          'mengoptimalkan dan mengelola konfigurasi sistem Mobile Legends dengan aman. '
-                          'Aplikasi ini memanfaatkan Shizuku API untuk menjalankan perintah tingkat sistem '
-                          'tanpa perlu root, memberikan kontrol penuh dengan antarmuka yang mudah digunakan.',
+                          'MLX INJECTOR adalah aplikasi pengelola skin & kustomisasi visual untuk pengguna yang ingin mencoba tampilan kustom secara lokal. Aplikasi ini hanya menyediakan file aset visual untuk penggunaan pribadi dan menyertakan beberapa aset pihak ketiga, MLX INJECTOR dibuat hanya untuk hiburan semata dan tidak berafiliasi, didukung, atau disetujui oleh pengembang/game resmi manapun.',
                           style: TextStyle(fontSize: 14, color: Colors.black54, height: 1.4),
                         ),
                       ],
@@ -559,7 +839,8 @@ void _hideProgressDialog() {
                 'MLX Injector',
                 style: TextStyle(
                   fontFamily: 'Jost',
-                  color: colorScheme.onSurface,
+                  //color: colorScheme.onSurface,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -570,7 +851,7 @@ void _hideProgressDialog() {
             ),
           ),
 
-          // 🔹 Judul Section “New Skin” di kanan + Divider full
+      /*    // 🔹 Judul Section “New Skin” di kanan + Divider full
           SliverToBoxAdapter(
             child: Column(
               children: [
@@ -594,9 +875,9 @@ void _hideProgressDialog() {
                 const Divider(thickness: 1),
               ],
             ),
-          ),
+          ), */
 
-          // 🔹 List Hero dari JSON
+    /*      // 🔹 List Hero dari JSON
           SliverToBoxAdapter(
             child: FutureBuilder<List<dynamic>>(
               future: fetchHeroData(),
@@ -716,17 +997,17 @@ if (snapshot.hasError) {
 _hideProgressDialog();
 
   // 🔹 tampilkan hasil download
+  if (ok) {
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        ok
-            ? '✅ Berhasil mengunduh dan memasang $skinName dari $heroName!'
-            : '❌ Gagal mengunduh $skinName dari $heroName!',
-      ),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 3),
-    ),
+    const SnackBar(content: Text('✅ Download & pasang berhasil!')),
   );
+  await showNotification('Berhasil 🎉', '"$skinName" dari "$heroName" telah dipasang!');
+} else {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+  );
+  await showNotification('Gagal ❌', 'Download atau pemasangan "$skinName" dari "$heroName" gagal.');
+}
 },
                         child: Container(
                           width: 160,
@@ -746,37 +1027,52 @@ _hideProgressDialog();
   crossAxisAlignment: CrossAxisAlignment.center,
   children: [
     Stack(
-      children: [
-        // 🔹 Gambar utama hero
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: CachedNetworkImage(
-            imageUrl: hero['image'],
-            height: 140,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            placeholder: (context, url) =>
-                Container(height: 140, color: Colors.grey[300]),
+  children: [
+    // 🔹 Gambar utama hero
+    ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: CachedNetworkImage(
+        imageUrl: hero['image'],
+        height: 140,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (context, url) =>
+            Container(height: 140, color: Colors.grey[300]),
+      ),
+    ),
+
+    // 🔹 Gradient overlay di atas gambar
+    Container(
+      height: 140,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            Colors.black.withOpacity(0.5),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+    ),
+
+    // 🔹 Overlay icon di kanan atas (jika ada)
+    if (hero['overlay_icon'] != null && hero['overlay_icon'].isNotEmpty)
+      Positioned(
+        top: 0,
+        right: 2,
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: Image.network(
+            hero['overlay_icon'],
+            fit: BoxFit.contain,
           ),
         ),
-
-                
-        // 🔹 Overlay icon di kanan atas (jika ada)
-        if (hero['overlay_icon'] != null && hero['overlay_icon'].isNotEmpty)
-          Positioned(
-            top: 0,
-            right: 2,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: Image.network(
-                hero['overlay_icon'],
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-      ],
-    ),
+      ),
+  ],
+),
 
     // 🔹 Info hero di bawah gambar
     Padding(
@@ -848,7 +1144,7 @@ _hideProgressDialog();
             ),
           ),
           
-
+*/
           // 🔹 Text “More Feature” di kanan + Divider full bawah
           SliverToBoxAdapter(
             child: Column(
@@ -859,7 +1155,7 @@ _hideProgressDialog();
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                        'More Feature',
+                        'Feature',
                         style: TextStyle(
                           fontFamily: 'Jost',
                           fontWeight: FontWeight.bold,
@@ -933,38 +1229,52 @@ _hideProgressDialog();
     onTap: () {
       final title = feature['title'];
 
-      if (title == 'Unlock All Skins') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SkinsPage()),
-        );
-      } else if (title == 'Unlock Emotes') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const EmotePage()),
-        );
-      } else if (title == 'Unlock Recalls') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RecallPage()),
-        );
-      } else if (title == 'Drone View') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const DronePage()),
-        );
-      } else if (title == 'Hero Ranking') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const HeroRankPage()),
-        );
+      // 🔹 Pastikan iklan sudah dimuat, kalau belum, muat dulu
+      if (_interstitialAd == null) {
+        debugPrint('⚠️ Iklan belum siap, memuat ulang...');
+        _loadInterstitialAd();
       }
+      
+      /*      if (_rewardedAd == null) {
+        debugPrint('⚠️ Iklan belum siap, memuat ulang...');
+        _loadRewardedAd();
+      } */
+
+      // 🔹 Tampilkan interstitial (atau lanjut langsung kalau belum siap)
+      _showInterstitialAd(() {
+        if (title == 'Unlock All Skins') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SkinsPage()),
+          );
+        } else if (title == 'Unlock Emotes') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EmotePage()),
+          );
+        } else if (title == 'Unlock Recalls') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const RecallPage()),
+          );
+        } else if (title == 'Drone View') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DronePage()),
+          );
+        } else if (title == 'Hero Ranking') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HeroRankPage()),
+          );
+        }
+      });
     },
     child: Ink(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        gradient: gradients[index % gradients.length], // 🔹 gradient berganti tiap item
+        gradient: gradients[index % gradients.length],
         shape: BoxShape.circle,
       ),
       child: const Icon(
@@ -982,7 +1292,25 @@ _hideProgressDialog();
               childCount: features.length,
             ),
           ),
+SliverToBoxAdapter(
+            child: SizedBox(height: 80), // jarak supaya konten tidak tertutup banner
+          ),
         ],
+      ),
+      
+      // 🔹 Banner Ad di bawah layar
+      if (_isBannerAdReady)
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            width: _bannerAd!.size.width.toDouble(),
+            height: _bannerAd!.size.height.toDouble(),
+            color: Colors.transparent,
+            child: AdWidget(ad: _bannerAd!),
+          ),
+        ),
+      
+      ],
       ),
     );
   }
@@ -1028,7 +1356,7 @@ Drawer buildDrawer(BuildContext context, ColorScheme colorScheme) {
                     child: ClipOval(
                       child: CachedNetworkImage(
                         imageUrl:
-                            'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Icon/Hero1281-icon.png',
+                            'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251106_094515.png',
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
@@ -1110,4 +1438,35 @@ Drawer buildDrawer(BuildContext context, ColorScheme colorScheme) {
     ),
   );
 }
-} 
+}
+Future<String?> showPermissionDialog(BuildContext context) {
+  return showCupertinoDialog<String>(
+    context: context,
+    builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text('Permission'),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 8.0),
+          child: Text('Membutuhkan izin akses ke storage com.mobile.legends, Pilih satu izin yang ingin digunakan'),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, 'saf'),
+            child: const Text('Default Permission'),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, 'shizuku'),
+            child: const Text('Shizuku Permission'),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: CupertinoColors.activeBlue),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}

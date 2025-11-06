@@ -1,4 +1,4 @@
-package com.example.getapp
+package com.esa.mlxinjector
 
 import android.app.Activity
 import android.content.Context
@@ -20,10 +20,12 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
+import android.util.Log
 
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "com.example.getapp/native"
+    private val CHANNEL = "com.esa.mlxinjector/native"
     private var savedTreeUri: String? = null
     private val TREE_REQUEST_CODE = 1234
     private var pendingResult: MethodChannel.Result? = null
@@ -78,6 +80,34 @@ class MainActivity : FlutterActivity() {
                     val resultText = execShizukuCommand(cmd)
                     result.success(resultText)
                 }
+                "copyDirectoryToSAF1" -> {
+                    val sourceDir = call.argument<String>("sourceDir")
+                    val treeUriStr = call.argument<String>("treeUri")
+                
+                    if (sourceDir == null || treeUriStr == null) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                
+                    GlobalScope.launch(Dispatchers.IO) {
+                        var success = false
+                        try {
+                            val treeUri = Uri.parse(treeUriStr)
+                            val targetTree = DocumentFile.fromTreeUri(this@MainActivity, treeUri)
+                            if (targetTree != null && targetTree.canWrite()) {
+           
+                                copyFilesDrone(File(sourceDir), targetTree, this@MainActivity)
+                                success = true
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                
+                        withContext(Dispatchers.Main) {
+                            result.success(success)
+                        }
+                    }
+                }
 
                 // === Copy folder via SAF ===
                 "copyDirectoryToSAF" -> {
@@ -96,7 +126,7 @@ class MainActivity : FlutterActivity() {
                             val targetTree = DocumentFile.fromTreeUri(this@MainActivity, treeUri)
                             if (targetTree != null && targetTree.canWrite()) {
            
-                                copyFolderFast(File(sourceDir), targetTree, this@MainActivity)
+                                copyFilesOnly(File(sourceDir), targetTree, this@MainActivity)
                                 success = true
                             }
                         } catch (e: Exception) {
@@ -185,7 +215,124 @@ class MainActivity : FlutterActivity() {
     // ==========================================================
     // =============== Copy folder dengan SAF ===================
     // ==========================================================
-private suspend fun copyFolderFast(source: File, targetTree: DocumentFile, context: Context) {
+private suspend fun copyFilesOnly(source: File, targetTree: DocumentFile, context: Context) {
+    runBlocking {
+        val maxParallel = 6
+        val sem = Semaphore(maxParallel)
+        val scope = CoroutineScope(Dispatchers.IO)
+
+        // 🔹 Buat folder dragon2017/assets di dalam targetTree
+        val dragonFolder = targetTree.findFile("dragon2017") ?: targetTree.createDirectory("dragon2017")
+        val assetsFolder = dragonFolder?.findFile("assets") ?: dragonFolder?.createDirectory("assets")
+
+        if (assetsFolder == null) {
+            Log.e("CopyFilesOnly", "Gagal membuat folder dragon2017/assets")
+            return@runBlocking
+        }
+
+        // Folder tujuan utama kita sekarang
+        val realTargetTree = assetsFolder
+
+        // 🔹 Cache folder yang sudah ditemukan
+        val folderCache = ConcurrentHashMap<String, DocumentFile>().apply {
+            put("", realTargetTree)
+        }
+
+        // 🔹 Ambil semua file yang akan disalin
+        val allFiles = source.walkTopDown().filter { it.isFile }.toList()
+        val totalBytesAllFiles = allFiles.sumOf { it.length() }.toDouble().coerceAtLeast(1.0)
+        var totalWritten = 0L
+
+        // 🔹 Fungsi untuk memastikan folder target sudah ada
+        suspend fun ensureFolder(path: String): DocumentFile? {
+            folderCache[path]?.let { return it }
+            if (path.isEmpty()) return realTargetTree
+
+            val parts = path.split(File.separator)
+            var currentDir: DocumentFile? = realTargetTree
+            var currentPath = ""
+
+            for (part in parts) {
+                currentPath = if (currentPath.isEmpty()) part else "$currentPath/$part"
+                if (folderCache.containsKey(currentPath)) {
+                    currentDir = folderCache[currentPath]
+                    continue
+                }
+
+                // Cari folder, buat kalau belum ada
+                var found = currentDir?.findFile(part)
+                if (found == null || !found.isDirectory) {
+                    found = currentDir?.createDirectory(part)
+                }
+
+                if (found == null) return null
+
+                folderCache[currentPath] = found
+                currentDir = found
+            }
+
+            return currentDir
+        }
+
+        // 🔹 Fungsi untuk menyalin 1 file
+        suspend fun copyFile(srcFile: File) {
+            sem.acquire()
+            try {
+                val relPath = srcFile.relativeTo(source).parent ?: ""
+                val targetSubDir = ensureFolder(relPath) ?: return
+
+                val safeName = sanitizeFileName(srcFile.name)
+                targetSubDir.findFile(safeName)?.delete() // hapus jika sudah ada
+
+                val destFile = targetSubDir.createFile("application/octet-stream", safeName) ?: return
+
+                FileInputStream(srcFile).use { input ->
+                    context.contentResolver.openOutputStream(destFile.uri, "w")?.use { output ->
+                        val buf = ByteArray(64 * 1024)
+                        var read: Int
+                        while (input.read(buf).also { read = it } != -1) {
+                            output.write(buf, 0, read)
+                            totalWritten += read
+                            val progress = (totalWritten / totalBytesAllFiles).coerceIn(0.0, 1.0)
+
+                            Handler(Looper.getMainLooper()).post {
+                                MethodChannel(
+                                    flutterEngine!!.dartExecutor.binaryMessenger,
+                                    "com.esa.mlxinjector/native"
+                                ).invokeMethod("onMoveProgress", progress)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                sem.release()
+            }
+        }
+
+        // 🔹 Jalankan semua copy file paralel
+        try {
+            allFiles.map { srcFile -> scope.async { copyFile(srcFile) } }.awaitAll()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            scope.cancel()
+            Handler(Looper.getMainLooper()).post {
+                MethodChannel(
+                    flutterEngine!!.dartExecutor.binaryMessenger,
+                    "com.esa.mlxinjector/native"
+                ).invokeMethod("onMoveProgress", 1.0)
+            }
+        }
+    }
+}
+
+private fun sanitizeFileName(name: String): String {
+    return name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+}
+
+private suspend fun copyFilesDrone(source: File, targetTree: DocumentFile, context: Context) {
     runBlocking {
         val maxParallel = 6 // sesuaikan dengan kemampuan HP
         val sem = Semaphore(maxParallel)
@@ -232,7 +379,7 @@ private suspend fun copyFolderFast(source: File, targetTree: DocumentFile, conte
                                     Handler(Looper.getMainLooper()).post {
                                         MethodChannel(
                                             flutterEngine!!.dartExecutor.binaryMessenger,
-                                            "com.example.getapp/native"
+                                            "com.esa.mlxinjector/native"
                                         ).invokeMethod("onMoveProgress", overallProgress)
                                     }
                                 }
@@ -267,15 +414,11 @@ private suspend fun copyFolderFast(source: File, targetTree: DocumentFile, conte
             Handler(Looper.getMainLooper()).post {
                 MethodChannel(
                     flutterEngine!!.dartExecutor.binaryMessenger,
-                    "com.example.getapp/native"
+                    "com.example.my_app/native"
                 ).invokeMethod("onMoveProgress", 1.0)
             }
         }
     }
-}
-
-private fun sanitizeFileName(name: String): String {
-    return name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
 }
 
     private fun isAppInstalled(packageName: String): Boolean {
@@ -299,7 +442,7 @@ private fun sanitizeFileName(name: String): String {
                     "a/document/primary%3AAndroid%2Fdat$zwj" +
                     "a%2F"
 
-        val initialUri = Uri.parse(baseUri + Uri.encode(packageName) + "%2Ffiles%2Fdragon2017%2Fassets%2F")
+        val initialUri = Uri.parse(baseUri + Uri.encode(packageName) + "%2Ffiles%2F")
 
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         intent.putExtra("android.provider.extra.INITIAL_URI", initialUri)
@@ -343,7 +486,7 @@ private fun sanitizeFileName(name: String): String {
             return try {
                 var docId = DocumentsContract.getTreeDocumentId(uri) ?: return false
                 docId = docId.replace("\u2060", "").trim()
-                val expected = "primary:Android/data/$targetPkg/files/dragon2017/assets"
+                val expected = "primary:Android/data/$targetPkg/files"
                 docId == expected || docId == "$expected/"
             } catch (e: Exception) {
                 false

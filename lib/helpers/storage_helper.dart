@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 class StorageHelper {
-  static const _channel = MethodChannel('com.example.getapp/native');
+  static const _channel = MethodChannel('com.esa.mlxinjector/native');
 
   static Future<bool> isAppInstalled(String packageName) async {
     try {
@@ -45,6 +45,19 @@ class StorageHelper {
     try {
       final result = await _channel.invokeMethod<bool>(
         'copyDirectoryToSAF',
+        {'sourceDir': sourceDir, 'treeUri': treeUri},
+      );
+      return result ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // 🆕 Tambahan: salin folder via SAF
+  static Future<bool> copyDirectoryToSAF1(String sourceDir, String treeUri) async {
+    try {
+      final result = await _channel.invokeMethod<bool>(
+        'copyDirectoryToSAF1',
         {'sourceDir': sourceDir, 'treeUri': treeUri},
       );
       return result ?? false;
