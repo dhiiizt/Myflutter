@@ -1,4 +1,4 @@
-name: Flutter Build App Bundle
+name: Flutter Build App Bundle (Signed)
 
 on:
   push:
@@ -48,17 +48,34 @@ jobs:
       - name: Clean build
         run: flutter clean
 
-      # 7️⃣ Build App Bundle (unsigned)
-      - name: Build App Bundle
+      # 7️⃣ 🔐 Generate key.properties dari GitHub Secrets
+      - name: Create key.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=mykey.keystore" >> android/key.properties
+
+      # 8️⃣ 🔐 Decode mykey.keystore dari base64 secret
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mykey.keystore
+
+      # 9️⃣ Build App Bundle (signed)
+      - name: Build Signed App Bundle
         run: flutter build appbundle --release
 
-      # 8️⃣ Upload AAB artifact
-      - name: Upload App Bundle artifact
+      # 🔟 Upload hasil AAB
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
+<<<<<<< HEAD
           name: app-release-bundle
 <<<<<<< HEAD
           path: build/app/outputs/bundle/release/app-release.aab
 =======
           path: build/app/outputs/bundle/release/app-release.aab
 >>>>>>> f2649a8 (Prepare to overwrite remote with local)
+=======
+          name: app-release-bundle-signed
+          path: build/app/outputs/bundle/release/app-release.aab
+>>>>>>> 457ca95 (Prepare to overwrite remote with local)
