@@ -1,12 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.esa.mlxinjector">
 
-    <!-- INTERNET permission harus di luar <application> -->
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- ✅ Izin umum -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- ✅ Izin Shizuku API versi terbaru -->
+
+    <!-- ✅ Izin AdMob (untuk Android 13+) -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+    <!-- ✅ Izin Shizuku -->
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
     <application
@@ -15,6 +20,7 @@
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
 
+        <!-- 🟦 Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,25 +32,28 @@
             android:windowSoftInputMode="adjustResize">
 
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme" />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
+        <!-- 🟦 AdMob Activity -->
         <activity
-    android:name="com.google.android.gms.ads.AdActivity"
-    android:exported="false"
-    android:theme="@android:style/Theme.Translucent"
-    android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"/>
-        
+            android:name="com.google.android.gms.ads.AdActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize" />
+
+        <!-- 🟦 AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-1802736608698554~9016100457"/>
-        
+            android:value="ca-app-pub-1802736608698554~9016100457" />
+
+        <!-- 🟦 Shizuku Provider -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
@@ -58,29 +67,25 @@
             android:value="2" />
     </application>
 
+    <!-- 🟦 Queries (untuk akses package lain) -->
     <queries>
-        <!-- Akses ke Mobile Legends -->
         <package android:name="com.mobile.legends" />
         <package android:name="com.mobile.legends.hwag" />
-
-        <!-- Akses ke Shizuku -->
         <package android:name="moe.shizuku.privileged.api" />
-        
+
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
         </intent>
-        
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
-        
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
-        
     </queries>
-
 </manifest>
