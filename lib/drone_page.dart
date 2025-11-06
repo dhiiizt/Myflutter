@@ -389,104 +389,142 @@ Future<void> showNotification(String title, String body) async {
                             ),
                             TextButton.icon(
   onPressed: () async {
-  final url = item['downloadUrl'];
-  if (url == null || url.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data tidak ditemukan!')),
-    );
-    return;
-  }
+    final url = item['downloadUrl'];
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data tidak ditemukan!')),
+      );
+      return;
+    }
 
-  // 🔹 Dialog konfirmasi bergaya iOS
-  final confirm = await showCupertinoDialog<bool>(
-    context: context,
-    builder: (context) => CupertinoAlertDialog(
-      title: const Text(
-        'Notice!',
-        style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
-      ),
-      content: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Text(
-          'Apakah kamu ingin mengunduh dan memasang "${item['title']}"?',
-          style: const TextStyle(fontFamily: 'Jost'),
+    // 🔹 Dialog konfirmasi bergaya iOS
+    final confirm = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text(
+          'Notice!',
+          style: TextStyle(fontFamily: 'Jost', fontWeight: FontWeight.bold),
         ),
-      ),
-      actions: [
-        CupertinoDialogAction(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        CupertinoDialogAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text(
-            'Download',
-            style: TextStyle(color: CupertinoColors.systemBlue),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'Apakah kamu ingin mengunduh dan memasang "${item['title']}"?',
+            style: const TextStyle(fontFamily: 'Jost'),
           ),
         ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
-
-  // 🔹 Cek dulu apakah Rewarded Ad siap
-  if (_rewardedAd == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('⚠️ Iklan belum siap, coba lagi nanti.')),
-    );
-    _loadRewardedAd(); // coba muat ulang
-    return;
-  }
-
-  // 🔹 Tampilkan Rewarded Ad dulu
-  _showRewardedAd(() async {
-    debugPrint('🎁 Reward didapat, mulai proses download...');
-
-    // 🔹 Tampilkan dialog loading
-    await _showProgressDialog();
-
-    // ✅ Proses utama download & install
-    final ok = await DownloadHelper.handleDownloadAndInstall1(
-      url,
-      onProgress: (stage, progress) {
-        switch (stage) {
-          case 'download':
-            _stageLabel.value = 'Mengunduh file...';
-            break;
-          case 'extract':
-            _stageLabel.value = 'Menganalisa file...';
-            break;
-          case 'move':
-            _stageLabel.value = 'Memasang file...';
-            break;
-          default:
-            _stageLabel.value = 'Memproses...';
-            break;
-        }
-
-        _progress.value = progress;
-      },
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Download',
+              style: TextStyle(color: CupertinoColors.systemBlue),
+            ),
+          ),
+        ],
+      ),
     );
 
-    _hideProgressDialog();
+    if (confirm != true) return;
 
-    if (ok) {
-      debugPrint('✅ Proses selesai!');
+    // 🔹 Kalau iklan belum siap → lanjut download tanpa iklan
+    if (_rewardedAd == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+        const SnackBar(content: Text('⚠️ Iklan belum siap, lanjutkan.')),
       );
-      await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
-    } else {
-      debugPrint('❌ Proses gagal.');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+      _loadRewardedAd(); // tetap muat ulang biar siap nanti
+
+      // 🔹 Jalankan langsung proses download
+      await _showProgressDialog();
+
+      final ok = await DownloadHelper.handleDownloadAndInstall1(
+        url,
+        onProgress: (stage, progress) {
+          switch (stage) {
+            case 'download':
+              _stageLabel.value = 'Mengunduh file...';
+              break;
+            case 'extract':
+              _stageLabel.value = 'Menganalisa file...';
+              break;
+            case 'move':
+              _stageLabel.value = 'Memasang file...';
+              break;
+            default:
+              _stageLabel.value = 'Memproses...';
+              break;
+          }
+          _progress.value = progress;
+        },
       );
-      await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
+
+      _hideProgressDialog();
+
+      if (ok) {
+        debugPrint('✅ Proses selesai!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+        );
+        await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
+      } else {
+        debugPrint('❌ Proses gagal.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+        );
+        await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
+      }
+
+      return; // ⛔️ jangan lanjut ke bawah
     }
-  });
-},
+
+    // 🔹 Kalau iklan siap → tampilkan Rewarded Ad dulu
+    _showRewardedAd(() async {
+      debugPrint('🎁 Reward didapat, mulai proses download...');
+
+      await _showProgressDialog();
+
+      final ok = await DownloadHelper.handleDownloadAndInstall1(
+        url,
+        onProgress: (stage, progress) {
+          switch (stage) {
+            case 'download':
+              _stageLabel.value = 'Mengunduh file...';
+              break;
+            case 'extract':
+              _stageLabel.value = 'Menganalisa file...';
+              break;
+            case 'move':
+              _stageLabel.value = 'Memasang file...';
+              break;
+            default:
+              _stageLabel.value = 'Memproses...';
+              break;
+          }
+          _progress.value = progress;
+        },
+      );
+
+      _hideProgressDialog();
+
+      if (ok) {
+        debugPrint('✅ Proses selesai!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+        );
+        await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
+      } else {
+        debugPrint('❌ Proses gagal.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+        );
+        await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
+      }
+    });
+  },
   icon: const Icon(Icons.download),
   label: const Text('Download'),
 ),

@@ -66,8 +66,8 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await initNotifications();
   
- /* final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
-await MobileAds.instance.updateRequestConfiguration(config); */
+ /*final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
+await MobileAds.instance.updateRequestConfiguration(config);*/
 await MobileAds.instance.initialize();
 
   runApp(const MyApp());
@@ -514,7 +514,7 @@ InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+    adUnitId: 'ca-app-pub-1802736608698554/3551472040', 
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -570,7 +570,7 @@ RewardedAd? _rewardedAd;
 
 void _loadRewardedAd() {
   RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
+    adUnitId: 'ca-app-pub-1802736608698554/7171045052',
     request: const AdRequest(),
     rewardedAdLoadCallback: RewardedAdLoadCallback(
       onAdLoaded: (ad) {
@@ -617,7 +617,7 @@ bool _isBannerAdReady = false;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
+    adUnitId: 'ca-app-pub-1802736608698554/3423371739',
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(

@@ -614,23 +614,16 @@ Future<void> showNotification(String title, String body) async {
     return;
   }
 
-  // 🔹 Cek dulu apakah iklan siap
+  // 🔹 Kalau iklan belum siap → lanjut download tanpa iklan
   if (_rewardedAd == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('⚠️ Iklan belum siap, coba lagi nanti.')),
+      const SnackBar(content: Text('⚠️ Iklan belum siap, lanjutkan.')),
     );
-    _loadRewardedAd(); // muat ulang jika belum siap
-    return;
-  }
+    _loadRewardedAd(); // muat ulang iklan biar siap nanti
 
-  // 🔹 Tampilkan Rewarded Ad sebelum download
-  _showRewardedAd(() async {
-    debugPrint('Reward didapat, mulai proses download skin...');
-
-    // 🔹 Tampilkan dialog loading
+    // 🔹 Langsung mulai proses download
     await _showProgressDialog();
 
-    // ✅ gunakan (stage, progress)
     final result = await DownloadManagerHelper.handleDownloadAndInstall(
       url,
       onProgress: (stage, progress) {
@@ -648,8 +641,50 @@ Future<void> showNotification(String title, String body) async {
             _stageLabel.value = 'Memproses...';
             break;
         }
+        _progress.value = progress;
+      },
+    );
 
-        // update progress UI
+    _hideProgressDialog();
+
+    if (result) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+      );
+      await showNotification('Berhasil ✅', 'Skin "$skinName" telah dipasang!');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+      );
+      await showNotification('Gagal ❌', 'Download atau pemasangan skin "$skinName" gagal.');
+    }
+
+    return; // ⛔️ Jangan lanjut ke bagian iklan di bawah
+  }
+
+  // 🔹 Kalau iklan siap → tampilkan rewarded ad dulu
+  _showRewardedAd(() async {
+    debugPrint('Reward didapat, mulai proses download skin...');
+
+    await _showProgressDialog();
+
+    final result = await DownloadManagerHelper.handleDownloadAndInstall(
+      url,
+      onProgress: (stage, progress) {
+        switch (stage) {
+          case 'download':
+            _stageLabel.value = 'Mengunduh file...';
+            break;
+          case 'extract':
+            _stageLabel.value = 'Menganalisa file...';
+            break;
+          case 'move':
+            _stageLabel.value = 'Memasang file...';
+            break;
+          default:
+            _stageLabel.value = 'Memproses...';
+            break;
+        }
         _progress.value = progress;
       },
     );
