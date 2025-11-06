@@ -1,4 +1,4 @@
-name: Flutter Build App Bundle (Signed)
+name: Flutter Build App Bundle (Unsigned)
 
 on:
   push:
@@ -48,25 +48,13 @@ jobs:
       - name: Clean build
         run: flutter clean
 
-      # 7️⃣ 🔐 Generate key.properties dari GitHub Secrets
-      - name: Create key.properties
-        run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=../app/mykey_jks.keystore" >> android/key.properties
-
-      # 8️⃣ 🔐 Decode mykey_jks.keystore dari base64 secret
-      - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mykey_jks.keystore
-
-      # 9️⃣ Build App Bundle (signed)
-      - name: Build Signed App Bundle
+      # 7️⃣ 🏗️ Build App Bundle (Unsigned)
+      - name: Build Unsigned App Bundle
         run: flutter build appbundle --release
 
-      # 🔟 Upload hasil AAB
+      # 8️⃣ 📦 Upload hasil AAB
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-bundle-signed
+          name: app-release-bundle-unsigned
           path: build/app/outputs/bundle/release/app-release.aab

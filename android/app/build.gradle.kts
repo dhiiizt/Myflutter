@@ -8,13 +8,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val keystorePropertiesFile = rootProject.file("key.properties")
-val keystoreProperties = Properties()
-
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
-
 android {
     namespace = "com.esa.mlxinjector"
     compileSdk = flutter.compileSdkVersion
@@ -38,16 +31,7 @@ android {
         versionName = flutter.versionName
     }
 
-    // 🧩 Tambahkan blok signingConfigs release
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String?
-        }
-    }
-
+    // 🚫 Tidak ada signingConfigs, jadi unsigned build
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -58,8 +42,8 @@ android {
                 "proguard-rules.pro"
             )
 
-            // 🔒 Ubah dari debug ke release agar signed sesuai key.properties
-            signingConfig = signingConfigs.getByName("release")
+            // 🚫 Jangan tandatangani build release
+            // signingConfig = signingConfigs.getByName("release") ← hapus baris ini
         }
     }
 }
@@ -69,7 +53,7 @@ flutter {
 }
 
 dependencies {
-    // ✅ Shizuku API terbaru versi stabil
+    // ✅ Shizuku API versi stabil
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("androidx.documentfile:documentfile:1.0.1")
