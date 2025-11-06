@@ -217,18 +217,6 @@ void _showInterstitialAd(VoidCallback onAdClosed) {
   }
 }
 
-@override
-void initState() {
-  super.initState();
-
-  // 🔹 Muat Interstitial Ad pertama kali
-  _loadInterstitialAd();
-
-  // 🔹 Muat Rewarded Ad pertama kali
-  _loadRewardedAd();
-  
-  _loadBannerAd();
-}
 
 RewardedAd? _rewardedAd;
 
