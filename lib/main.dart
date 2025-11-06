@@ -1427,7 +1427,7 @@ Drawer buildDrawer(BuildContext context, ColorScheme colorScheme) {
                 const Icon(Icons.privacy_tip_outlined, color: Color(0xFF2196F3)),
             title: const Text('Privacy Policy', style: TextStyle(fontFamily: 'Jost')),
             onTap: () async {
-              final url = Uri.parse('https://yourwebsite.com/privacy');
+              final url = Uri.parse('https://doc-hosting.flycricket.io/mlx-injector-privacy-policy/39525d2b-b6ee-4bb7-bfa0-28baa81a5c45/privacy');
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }

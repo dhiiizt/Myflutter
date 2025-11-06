@@ -57,4 +57,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
+<<<<<<< HEAD
           path: build/app/outputs/bundle/release/app-release.aab
+=======
+          path: build/app/outputs/bundle/release/app-release.aab
+>>>>>>> f2649a8 (Prepare to overwrite remote with local)
