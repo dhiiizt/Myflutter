@@ -54,11 +54,11 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=../app/mykey.keystore" >> android/key.properties
+          echo "storeFile=../app/mykey_jks.keystore" >> android/key.properties
 
-      # 8️⃣ 🔐 Decode mykey.keystore dari base64 secret
+      # 8️⃣ 🔐 Decode mykey_jks.keystore dari base64 secret
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mykey.keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mykey_jks.keystore
 
       # 9️⃣ Build App Bundle (signed)
       - name: Build Signed App Bundle
