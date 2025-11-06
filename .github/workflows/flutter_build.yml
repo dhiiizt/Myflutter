@@ -54,7 +54,7 @@ jobs:
           echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=mykey.keystore" >> android/key.properties
+          echo "storeFile=../app/mykey.keystore" >> android/key.properties
 
       # 8️⃣ 🔐 Decode mykey.keystore dari base64 secret
       - name: Decode keystore
@@ -68,14 +68,5 @@ jobs:
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-<<<<<<< HEAD
-          name: app-release-bundle
-<<<<<<< HEAD
-          path: build/app/outputs/bundle/release/app-release.aab
-=======
-          path: build/app/outputs/bundle/release/app-release.aab
->>>>>>> f2649a8 (Prepare to overwrite remote with local)
-=======
           name: app-release-bundle-signed
           path: build/app/outputs/bundle/release/app-release.aab
->>>>>>> 457ca95 (Prepare to overwrite remote with local)
