@@ -1,48 +1,39 @@
 {
   "project_info": {
-    "project_number": "407713833944",
-    "project_id": "admob-d3582",
-    "storage_bucket": "admob-d3582.firebasestorage.app"
+    "project_number": "384221827249",
+    "firebase_url": "https://neru-e6e7f-default-rtdb.firebaseio.com",
+    "project_id": "neru-e6e7f",
+    "storage_bucket": "neru-e6e7f.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:407713833944:android:2e71ac05e27da51420c8ad",
+        "mobilesdk_app_id": "1:384221827249:android:3fc844eb6ece007d55d290",
         "android_client_info": {
           "package_name": "com.esa.mlxinjector"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "384221827249-1ms3v8sdi1ku48jitfn3dbpqlpafb9ia.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAz2grwI99glQqSofLVmY-I592RyXskUuk"
+          "current_key": "AIzaSyBV1jIDumwTxE0Fm3EGYe2tvnQUgglyNaY"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "384221827249-1ms3v8sdi1ku48jitfn3dbpqlpafb9ia.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:407713833944:android:8345b3b22bc9928a20c8ad",
-        "android_client_info": {
-          "package_name": "com.mycompany.admob"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAz2grwI99glQqSofLVmY-I592RyXskUuk"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      },
-      "admob_app_id": "ca-app-pub-6764189348507154~2817329908"
     }
   ],
   "configuration_version": "1"
