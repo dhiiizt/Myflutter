@@ -1,4 +1,4 @@
-name: Flutter Build App Bundle (Unsigned)
+name: Flutter Build APK (All ABIs Unsigned)
 
 on:
   push:
@@ -48,13 +48,14 @@ jobs:
       - name: Clean build
         run: flutter clean
 
-      # 7️⃣ 🏗️ Build App Bundle (Unsigned)
-      - name: Build Unsigned App Bundle
-        run: flutter build appbundle --release
+      # 7️⃣ 🏗️ Build APK untuk semua ABI (Unsigned)
+      - name: Build Unsigned APK (All ABIs)
+        run: |
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
 
-      # 8️⃣ 📦 Upload hasil AAB
-      - name: Upload AAB artifact
+      # 8️⃣ 📦 Upload hasil APK
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-bundle-unsigned
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: app-release-apks-unsigned
+          path: build/app/outputs/flutter-apk/*.apk
