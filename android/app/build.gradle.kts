@@ -4,9 +4,8 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter plugin harus di bawah Android dan Kotlin
     id("dev.flutter.flutter-gradle-plugin")
-    plugins {
     id("com.google.gms.google-services")
 }
 
@@ -33,7 +32,6 @@ android {
         versionName = flutter.versionName
     }
 
-    // 🚫 Tidak ada signingConfigs, jadi unsigned build
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -44,8 +42,7 @@ android {
                 "proguard-rules.pro"
             )
 
-            // 🚫 Jangan tandatangani build release
-            // signingConfig = signingConfigs.getByName("release") ← hapus baris ini
+          
         }
     }
 }
@@ -58,9 +55,12 @@ dependencies {
     // ✅ Shizuku API versi stabil
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
+
     implementation("androidx.documentfile:documentfile:1.0.1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
