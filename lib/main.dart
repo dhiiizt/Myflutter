@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -65,6 +66,8 @@ void main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await initNotifications();
+  
+  await Firebase.initializeApp();
   
  /*final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
 await MobileAds.instance.updateRequestConfiguration(config);*/

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "407713833944",
+    "project_id": "admob-d3582",
+    "storage_bucket": "admob-d3582.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407713833944:android:2e71ac05e27da51420c8ad",
+        "android_client_info": {
+          "package_name": "com.esa.mlxinjector"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz2grwI99glQqSofLVmY-I592RyXskUuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407713833944:android:8345b3b22bc9928a20c8ad",
+        "android_client_info": {
+          "package_name": "com.mycompany.admob"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz2grwI99glQqSofLVmY-I592RyXskUuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      },
+      "admob_app_id": "ca-app-pub-6764189348507154~2817329908"
+    }
+  ],
+  "configuration_version": "1"
+}

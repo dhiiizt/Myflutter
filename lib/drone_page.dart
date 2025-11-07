@@ -434,7 +434,7 @@ Future<void> showNotification(String title, String body) async {
     // 🔹 Kalau iklan belum siap → lanjut download tanpa iklan
     if (_rewardedAd == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('⚠️ Iklan belum siap, lanjutkan.')),
+        const SnackBar(content: Text('Iklan belum siap, lanjutkan.')),
       );
       _loadRewardedAd(); // tetap muat ulang biar siap nanti
 
