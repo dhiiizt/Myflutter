@@ -69,8 +69,18 @@ void main() async {
   
   await Firebase.initializeApp();
   
- /*final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
-await MobileAds.instance.updateRequestConfiguration(config);*/
+  // Cek semua app Firebase yang terdaftar
+  print("Firebase apps: ${Firebase.apps.map((e) => e.name).toList()}");
+  
+  // Cek apakah app default sudah aktif
+  if (Firebase.apps.isNotEmpty) {
+    print("✅ Firebase sudah tertaut dengan project Flutter");
+  } else {
+    print("❌ Firebase belum tertaut / belum diinisialisasi");
+  }
+  
+ final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
+await MobileAds.instance.updateRequestConfiguration(config);
 await MobileAds.instance.initialize();
 
   runApp(const MyApp());
@@ -378,8 +388,8 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
 }
 
   final List<String> ToolbarImages = [
-    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251105_232401.png',
-    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251105_232401.png',
+    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/ML%20ToolKit/1000213688.jpg',
+    'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/ML%20ToolKit/1000213688.jpg',
   ];
 
   final List<Map<String, String>> features = [
@@ -517,7 +527,7 @@ InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', 
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', 
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -567,13 +577,24 @@ void initState() {
   _loadRewardedAd();
   
   _loadBannerAd();
+  
+  _loadNativeAd();
+}
+
+@override
+void dispose() {
+  _nativeAd?.dispose();
+  _interstitialAd?.dispose();
+  _rewardedAd?.dispose();
+  _bannerAd?.dispose();
+  super.dispose();
 }
 
 RewardedAd? _rewardedAd;
 
 void _loadRewardedAd() {
   RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052',
+    adUnitId: 'ca-app-pub-3940256099942544/5224354917',
     request: const AdRequest(),
     rewardedAdLoadCallback: RewardedAdLoadCallback(
       onAdLoaded: (ad) {
@@ -620,7 +641,7 @@ bool _isBannerAdReady = false;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739',
+    adUnitId: 'ca-app-pub-3940256099942544/6300978111',
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(
@@ -637,6 +658,48 @@ void _loadBannerAd() {
       },
     ),
   )..load();
+}
+
+NativeAd? _nativeAd;
+bool _isNativeAdReady = false;
+
+/// 🔹 Muat Native Ad
+void _loadNativeAd() {
+  _nativeAd = NativeAd(
+    adUnitId: 'ca-app-pub-3940256099942544/2247696110', // ✅ ID TEST Native
+    factoryId: 'listTile', // wajib sama dengan yg di-registrasi di main.dart
+    request: const AdRequest(),
+    listener: NativeAdListener(
+      onAdLoaded: (ad) {
+        debugPrint('✅ Native Ad berhasil dimuat');
+        _isNativeAdReady = true;
+        setState(() {});
+      },
+      onAdFailedToLoad: (ad, error) {
+        debugPrint('❌ Gagal memuat Native Ad: $error');
+        ad.dispose();
+        _isNativeAdReady = false;
+        setState(() {});
+      },
+    ),
+  )..load();
+}
+
+/// 🔹 Tampilkan Native Ad (dalam widget)
+Widget _showNativeAd() {
+  if (_isNativeAdReady && _nativeAd != null) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      height: 300,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey[200],
+      ),
+      child: AdWidget(ad: _nativeAd!),
+    );
+  } else {
+    return const SizedBox.shrink(); // kosong dulu kalau belum siap
+  }
 }
 
 Future<void> showNotification(String title, String body) async {
@@ -821,9 +884,17 @@ Future<void> showNotification(String title, String body) async {
                       children: [
                         const SizedBox(height: 10),
                         const Text(
-                          'MLX INJECTOR adalah aplikasi pengelola skin & kustomisasi visual untuk pengguna yang ingin mencoba tampilan kustom secara lokal. Aplikasi ini hanya menyediakan file aset visual untuk penggunaan pribadi dan menyertakan beberapa aset pihak ketiga, MLX INJECTOR dibuat hanya untuk hiburan semata dan tidak berafiliasi, didukung, atau disetujui oleh pengembang/game resmi manapun.',
-                          style: TextStyle(fontSize: 14, color: Colors.black54, height: 1.4),
-                        ),
+  '''MLX INJECTOR adalah aplikasi pengelola skin dan kustomisasi visual yang dirancang untuk pengguna yang ingin mencoba tampilan kustom secara lokal. Aplikasi ini hanya menyediakan file aset visual untuk penggunaan pribadi dan tidak memengaruhi sistem inti maupun mekanisme resmi game.
+
+Beberapa aset yang tersedia dapat berasal dari pihak ketiga dan digunakan semata-mata untuk keperluan hiburan. MLX INJECTOR tidak memiliki afiliasi, tidak didukung, dan tidak disetujui oleh pengembang atau penerbit game resmi mana pun. Seluruh merek dagang dan aset visual sepenuhnya menjadi milik pemilik aslinya.
+
+Penggunaan aplikasi ini sepenuhnya merupakan tanggung jawab pengguna.''',
+  style: TextStyle(
+    fontSize: 11,
+    color: Colors.black54,
+    height: 1.4,
+  ),
+),
                       ],
                     );
                   } else if (value == 'exit') {

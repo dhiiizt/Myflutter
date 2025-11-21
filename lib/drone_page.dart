@@ -22,10 +22,15 @@ class _DronePageState extends State<DronePage> {
   bool _loading = false;
 
   @override
-  void initState() {
-    super.initState();
-    fetchDroneData();
-  }
+void initState() {
+  super.initState();
+  fetchDroneData();
+
+  // 🔹 Muat iklan lebih awal
+  _loadInterstitialAd();
+  _loadRewardedAd();
+  _loadBannerAd();
+}
 
   Future<void> fetchDroneData() async {
     setState(() => _loading = true);
@@ -141,7 +146,7 @@ InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID iklan TEST
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -186,7 +191,7 @@ RewardedAd? _rewardedAd;
 
 void _loadRewardedAd() {
   RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
+    adUnitId: 'ca-app-pub-3940256099942544/5224354917', // ✅ ID test Rewarded Ad
     request: const AdRequest(),
     rewardedAdLoadCallback: RewardedAdLoadCallback(
       onAdLoaded: (ad) {
@@ -233,7 +238,7 @@ bool _isBannerAdReady = false;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
+    adUnitId: 'ca-app-pub-3940256099942544/6300978111', // ✅ ID test banner
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(
@@ -274,6 +279,61 @@ Future<void> showNotification(String title, String body) async {
   );
 }
 
+Future<void> _showAdLoadingDialog() async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => CupertinoAlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          SizedBox(height: 10),
+          CupertinoActivityIndicator(radius: 14),
+          SizedBox(height: 15),
+          Text(
+            'Menyiapkan...',
+            style: TextStyle(fontFamily: 'Jost'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _hideAdLoadingDialog() {
+  if (Navigator.canPop(context)) {
+    Navigator.pop(context);
+  }
+}
+
+Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
+  int retry = 0;
+  const maxRetry = 5;
+
+  await _showAdLoadingDialog();
+
+  while (_rewardedAd == null && retry < maxRetry) {
+    debugPrint('⌛ Memuat iklan... (${retry + 1}/$maxRetry)');
+    _loadRewardedAd();
+    await Future.delayed(const Duration(seconds: 2));
+    retry++;
+  }
+
+  _hideAdLoadingDialog();
+
+  if (_rewardedAd == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('❌ Iklan gagal dimuat, coba lagi nanti.'),
+      ),
+    );
+    return; // STOP - TIDAK DOWNLOAD
+  }
+
+  _showRewardedAd(() {
+    onRewarded();
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +457,6 @@ Future<void> showNotification(String title, String body) async {
       return;
     }
 
-    // 🔹 Dialog konfirmasi bergaya iOS
     final confirm = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -431,59 +490,9 @@ Future<void> showNotification(String title, String body) async {
 
     if (confirm != true) return;
 
-    // 🔹 Kalau iklan belum siap → lanjut download tanpa iklan
-    if (_rewardedAd == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Iklan belum siap, lanjutkan.')),
-      );
-      _loadRewardedAd(); // tetap muat ulang biar siap nanti
-
-      // 🔹 Jalankan langsung proses download
-      await _showProgressDialog();
-
-      final ok = await DownloadHelper.handleDownloadAndInstall1(
-        url,
-        onProgress: (stage, progress) {
-          switch (stage) {
-            case 'download':
-              _stageLabel.value = 'Mengunduh file...';
-              break;
-            case 'extract':
-              _stageLabel.value = 'Menganalisa file...';
-              break;
-            case 'move':
-              _stageLabel.value = 'Memasang file...';
-              break;
-            default:
-              _stageLabel.value = 'Memproses...';
-              break;
-          }
-          _progress.value = progress;
-        },
-      );
-
-      _hideProgressDialog();
-
-      if (ok) {
-        debugPrint('✅ Proses selesai!');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Download & pasang berhasil!')),
-        );
-        await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
-      } else {
-        debugPrint('❌ Proses gagal.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Gagal download atau pasang!')),
-        );
-        await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
-      }
-
-      return; // ⛔️ jangan lanjut ke bawah
-    }
-
-    // 🔹 Kalau iklan siap → tampilkan Rewarded Ad dulu
-    _showRewardedAd(() async {
-      debugPrint('🎁 Reward didapat, mulai proses download...');
+    // ✅ PASTIKAN IKLAN TAMPIL DULU
+    await _ensureRewardedAdAndShow(() async {
+      debugPrint('Reward diterima, mulai download...');
 
       await _showProgressDialog();
 
@@ -502,7 +511,6 @@ Future<void> showNotification(String title, String body) async {
               break;
             default:
               _stageLabel.value = 'Memproses...';
-              break;
           }
           _progress.value = progress;
         },
@@ -511,17 +519,21 @@ Future<void> showNotification(String title, String body) async {
       _hideProgressDialog();
 
       if (ok) {
-        debugPrint('✅ Proses selesai!');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Download & pasang berhasil!')),
         );
-        await showNotification('Berhasil ✅', '"${item['title']} ${item['description']}" telah dipasang!');
+        await showNotification(
+          'Berhasil ✅',
+          '"${item['title']} ${item['description']}" telah dipasang!',
+        );
       } else {
-        debugPrint('❌ Proses gagal.');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('❌ Gagal download atau pasang!')),
         );
-        await showNotification('Gagal ❌', 'Download atau pemasangan "${item['title']} ${item['description']}" gagal.');
+        await showNotification(
+          'Gagal ❌',
+          'Download atau pemasangan "${item['title']} ${item['description']}" gagal.',
+        );
       }
     });
   },
