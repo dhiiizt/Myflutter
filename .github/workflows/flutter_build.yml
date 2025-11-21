@@ -1,61 +1,61 @@
 name: Flutter Build APK (All ABIs Unsigned)
 
 on:
-push:
-branches:
-- main
+  push:
+    branches:
+      - main
 
 jobs:
-build:
-runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-steps:  
-  # 1️⃣ Checkout repository  
-  - name: Checkout repository  
-    uses: actions/checkout@v4  
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # 2️⃣ Setup Flutter  
-  - name: Setup Flutter  
-    uses: subosito/flutter-action@v2  
-    with:  
-      flutter-version: '3.35.5'  
+      # 2️⃣ Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.5'
 
-  # 3️⃣ Cache pub packages  
-  - name: Cache pub packages  
-    uses: actions/cache@v3  
-    with:  
-      path: ~/.pub-cache  
-      key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}  
-      restore-keys: |  
-        ${{ runner.os }}-pub-  
+      # 3️⃣ Cache pub packages
+      - name: Cache pub packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
 
-  # 4️⃣ Cache Gradle  
-  - name: Cache Gradle  
-    uses: actions/cache@v3  
-    with:  
-      path: |  
-        ~/.gradle/caches  
-        ~/.gradle/wrapper/  
-      key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}  
-      restore-keys: |  
-        ${{ runner.os }}-gradle-  
+      # 4️⃣ Cache Gradle
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper/
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-  # 5️⃣ Get dependencies  
-  - name: Get dependencies  
-    run: flutter pub get  
+      # 5️⃣ Get dependencies
+      - name: Get dependencies
+        run: flutter pub get
 
-  # 6️⃣ Clean build folder  
-  - name: Clean build  
-    run: flutter clean  
+      # 6️⃣ Clean build folder
+      - name: Clean build
+        run: flutter clean
 
-  # 7️⃣ 🏗️ Build APK untuk semua ABI (Unsigned)  
-  - name: Build Unsigned APK (All ABIs)  
-    run: |  
-      flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi  
+      # 7️⃣ 🏗️ Build APK untuk semua ABI (Unsigned)
+      - name: Build Unsigned APK (All ABIs)
+        run: |
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
 
-  # 8️⃣ 📦 Upload hasil APK  
-  - name: Upload APK artifacts  
-    uses: actions/upload-artifact@v4  
-    with:  
-      name: app-release-apks-unsigned  
-      path: build/app/outputs/flutter-apk/*.apk
+      # 8️⃣ 📦 Upload hasil APK
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apks-unsigned
+          path: build/app/outputs/flutter-apk/*.apk
