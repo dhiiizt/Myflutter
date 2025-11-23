@@ -869,7 +869,11 @@ Future<void> showNotification(String title, String body) async {
                       applicationName: 'MLX Tools - App Injector',
                       applicationVersion: 'August 2025',
                       applicationLegalese: '© 2025 EsaNeru',
-                      applicationIcon: const FlutterLogo(size: 40),
+                      applicationIcon: Image.asset(
+                          'assets/images/logo.png',
+                          width: 48,
+                          height: 48,
+                        ),
                       children: [
                         const SizedBox(height: 10),
                         const Text(
@@ -1419,7 +1423,7 @@ Drawer buildDrawer(BuildContext context, ColorScheme colorScheme) {
                     child: ClipOval(
                       child: CachedNetworkImage(
                         imageUrl:
-                            'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251106_094515.png',
+                            'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Images/20251123_092747.png',
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
