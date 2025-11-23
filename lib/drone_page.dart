@@ -146,7 +146,7 @@ InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID iklan TEST
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -186,11 +186,12 @@ void _showInterstitialAd(VoidCallback onAdClosed) {
 }
 
 
+
 RewardedAd? _rewardedAd;
 
 void _loadRewardedAd() {
   RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
+    adUnitId: 'ca-app-pub-3940256099942544/5224354917', // ✅ ID test Rewarded Ad
     request: const AdRequest(),
     rewardedAdLoadCallback: RewardedAdLoadCallback(
       onAdLoaded: (ad) {
@@ -237,7 +238,7 @@ bool _isBannerAdReady = false;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
+    adUnitId: 'ca-app-pub-3940256099942544/6300978111', // ✅ ID test banner
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(
@@ -320,14 +321,15 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
 
   _hideAdLoadingDialog();
 
-  // ✅ JIKA IKLAN TIDAK ADA → LANGSUNG LANJUT DOWNLOAD
   if (_rewardedAd == null) {
-    debugPrint('❌ Iklan gagal dimuat, lanjut tanpa iklan.');
-    onRewarded(); // <<< INI KUNCI: tetap jalankan proses download
-    return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('❌ Iklan gagal dimuat, coba lagi nanti.'),
+      ),
+    );
+    return; // STOP - TIDAK DOWNLOAD
   }
 
-  // ✅ Jika iklan ada → tampilkan seperti biasa
   _showRewardedAd(() {
     onRewarded();
   });
