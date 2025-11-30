@@ -1,4 +1,4 @@
-name: Flutter Build App Bundle (Unsigned)
+name: Flutter Build Signed AAB
 
 on:
   push:
@@ -10,51 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Flutter
+      # Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.5'
 
-      # 3️⃣ Cache pub packages
-      - name: Cache pub packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+      # 🔐 Decode keystore
+      - name: Decode keystore
+      run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/mykey_jks.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
-      # 4️⃣ Cache Gradle
-      - name: Cache Gradle
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper/
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      # 🔐 Buat file key.properties
+      - name: Create key.properties
+        run: |
+          echo "storeFile=mykey_jks.keystore" > android/key.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
 
-      # 5️⃣ Get dependencies
-      - name: Get dependencies
+      # Install dependencies
+      - name: Flutter pub get
         run: flutter pub get
 
-      # 6️⃣ Clean build folder
-      - name: Clean build
+      # Clean (optional)
+      - name: Flutter clean
         run: flutter clean
 
-      # 7️⃣ 🏗️ Build App Bundle (Unsigned)
-      - name: Build Unsigned App Bundle
+      # 🏗 Build AAB (Signed)
+      - name: Build Signed AAB
         run: flutter build appbundle --release
 
-      # 8️⃣ 📦 Upload hasil AAB
-      - name: Upload AAB artifact
+      # 📦 Upload artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-bundle-unsigned
+          name: app-release-aab-signed
           path: build/app/outputs/bundle/release/app-release.aab
