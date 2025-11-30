@@ -22,17 +22,16 @@ jobs:
 
       # 🔐 Decode keystore
       - name: Decode keystore
-        run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/mykey_jks.keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+  run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-key.jks
+  env:
+    KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
-      # 🔐 Buat file key.properties
-      - name: Create key.properties
-        run: |
-          echo "storeFile=mykey_jks.keystore" > android/key.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+- name: Create key.properties
+  run: |
+    echo "storeFile=upload-key.jks" > android/key.properties
+    echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
+    echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+    echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
 
       # Install dependencies
       - name: Flutter pub get
