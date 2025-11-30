@@ -25,7 +25,7 @@ class _SkinsPageState extends State<SkinsPage> {
       GlobalKey<ScaffoldMessengerState>();
 
   final String jsonUrl =
-      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/hero_skins.json';
+      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_hero_skins.json';
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _SkinsPageState extends State<SkinsPage> {
         throw Exception('Failed to load data');
       }
     } catch (e) {
-      debugPrint('Error fetching JSON: $e');
+      debugPrint('Error fetching: $e');
       setState(() => loading = false);
     }
   }

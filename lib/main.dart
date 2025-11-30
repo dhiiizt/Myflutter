@@ -394,8 +394,8 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
 
   final List<Map<String, String>> features = [
     {
-      'title': 'Unlock All Skins',
-      'subtitle': 'All skin role unlock',
+      'title': 'Preview Skins',
+      'subtitle': 'Preview All skin role',
       'icon':
           'https://akmweb.youngjoygame.com/web/gms/image/9ea138369ca4a37b4806ac64998df054.webp'
     },
@@ -418,7 +418,7 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
           'https://akmweb.youngjoygame.com/web/gms/image/1bea09e43f6b02845de97af863c53da5.webp'
     },
     {
-      'title': 'Hero Ranking',
+      'title': 'Meta Hero Ranking',
       'subtitle': 'Hero Strength Ranking',
       'icon':
           'https://akmweb.youngjoygame.com/web/gms/image/adaf737c13d48204dc39f4b48de91ac8.webp'
@@ -1309,7 +1309,7 @@ _hideProgressDialog();
 
       // 🔹 Tampilkan interstitial (atau lanjut langsung kalau belum siap)
       _showInterstitialAd(() {
-        if (title == 'Unlock All Skins') {
+        if (title == 'Preview Skins') {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const SkinsPage()),
@@ -1329,7 +1329,7 @@ _hideProgressDialog();
             context,
             MaterialPageRoute(builder: (context) => const DronePage()),
           );
-        } else if (title == 'Hero Ranking') {
+        } else if (title == 'Meta Hero Ranking') {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const HeroRankPage()),
