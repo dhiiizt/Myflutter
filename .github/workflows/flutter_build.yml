@@ -22,7 +22,7 @@ jobs:
 
       # 🔐 Decode keystore
       - name: Decode keystore
-      run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/mykey_jks.keystore
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/mykey_jks.keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
