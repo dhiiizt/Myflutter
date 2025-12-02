@@ -33,7 +33,7 @@ void initState() {
     setState(() => _loading = true);
     try {
       final url = Uri.parse(
-        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/drone_data_new.json',
+        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_drone_data_new.json',
       );
       final response = await http.get(url);
 
