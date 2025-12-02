@@ -1,4 +1,4 @@
-name: Flutter Build Signed AAB
+name: Flutter Build Signed APK Split
 
 on:
   push:
@@ -10,23 +10,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.5'
 
-      # 🔐 Decode keystore
       - name: Decode keystore
         run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-key.jks
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
-      # 🔐 Create key.properties
       - name: Create key.properties
         run: |
           echo "storeFile=upload-key.jks" > android/key.properties
@@ -34,21 +30,18 @@ jobs:
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
 
-      # Install dependencies
       - name: Flutter pub get
         run: flutter pub get
 
-      # Clean (optional)
       - name: Flutter clean
         run: flutter clean
 
-      # 🏗 Build AAB (Signed)
-      - name: Build Signed AAB
-        run: flutter build appbundle --release
+      # 🏗 Build APK per-ABI
+      - name: Build Split APK
+        run: flutter build apk --release --split-per-abi
 
-      # 📦 Upload artifact
-      - name: Upload AAB
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab-signed
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: split-apk-signed
+          path: build/app/outputs/flutter-apk/*.apk
