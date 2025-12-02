@@ -26,18 +26,7 @@ class _DronePageState extends State<DronePage> {
 void initState() {
   super.initState();
   fetchDroneData();
-  Future.delayed(const Duration(milliseconds: 2000), () {
-    if (AppOpenAdManager.instance.isLoaded) {
-      AppOpenAdManager.instance.showAdIfAvailable();
-    } else {
-      print("⏳ Iklan belum siap, tunggu dulu...");
-    }
-  });
-
-  // 🔹 Muat iklan lebih awal
-  _loadInterstitialAd();
   _loadRewardedAd();
-  _loadBannerAd();
 }
 
   Future<void> fetchDroneData() async {

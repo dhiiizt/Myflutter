@@ -15,12 +15,14 @@ import 'config_page.dart';
 import 'hero_rank_page.dart';
 import 'update_checker.dart';
 import 'app_open_ad_manager.dart';
+import 'adaptive_banner.dart';
 import '/helpers/download_manager_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -70,16 +72,7 @@ void main() async {
   await initNotifications();
   
   await Firebase.initializeApp();
-  
-  // Cek semua app Firebase yang terdaftar
-  print("Firebase apps: ${Firebase.apps.map((e) => e.name).toList()}");
-  
-  // Cek apakah app default sudah aktif
-  if (Firebase.apps.isNotEmpty) {
-    print("✅ Firebase sudah tertaut dengan project Flutter");
-  } else {
-    print("❌ Firebase belum tertaut / belum diinisialisasi");
-  }
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   
   
 await MobileAds.instance.initialize();
@@ -581,22 +574,17 @@ void initState() {
     UpdateChecker.checkForUpdate(context);
   });
 
-  // 🔹 Muat Interstitial Ad pertama kali
-  _loadInterstitialAd();
-
-  // 🔹 Muat Rewarded Ad pertama kali
   _loadRewardedAd();
   
   _loadBannerAd();
   
-  Future.delayed(const Duration(milliseconds: 5000), () {
+  Future.delayed(const Duration(milliseconds: 4000), () {
     if (AppOpenAdManager.instance.isLoaded) {
       AppOpenAdManager.instance.showAdIfAvailable();
     } else {
       print("⏳ Iklan belum siap, tunggu dulu...");
     }
   });
-  
   
 }
 
@@ -676,8 +664,8 @@ bool _isNativeAdReady = false;
 /// 🔹 Muat Native Ad
 void _loadNativeAd() {
   _nativeAd = NativeAd(
-    adUnitId: 'ca-app-pub-3940256099942544/2247696110', // ✅ ID TEST Native
-    factoryId: 'listTile', // wajib sama dengan yg di-registrasi di main.dart
+    adUnitId: 'ca-app-pub-3940256099942544/2247696110',
+    factoryId: 'listTile',
     request: const AdRequest(),
     listener: NativeAdListener(
       onAdLoaded: (ad) {
@@ -1373,7 +1361,7 @@ SliverToBoxAdapter(
         ],
       ),
       
-      // 🔹 Banner Ad di bawah layar
+   /*   // 🔹 Banner Ad di bawah layar
       if (_isBannerAdReady)
         Align(
           alignment: Alignment.bottomCenter,
@@ -1383,7 +1371,10 @@ SliverToBoxAdapter(
             color: Colors.transparent,
             child: AdWidget(ad: _bannerAd!),
           ),
-        ),
+        ), */
+        AdaptiveBanner(
+  adUnitId: "ca-app-pub-1802736608698554/9547069565", // TEST ID
+),
       
       ],
       ),

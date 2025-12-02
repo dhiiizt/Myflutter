@@ -2,7 +2,7 @@ name: getapp
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.8+11
+version: 1.0.9+12
 
 environment:
   sdk: ">=3.9.2 <4.0.0"
@@ -11,24 +11,23 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # iOS-style icons
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.1.1
   cached_network_image: ^3.3.1
   shared_preferences: ^2.3.2
-  file_picker: ^8.1.2
-  http: ^1.2.2
+  file_picker: ^8.1.6     # pertimbangkan upgrade
+  http: ^1.6.0            # pertimbangkan upgrade
   archive: ^4.0.6
-  path_provider: ^2.1.4
+  path_provider: ^2.1.5   # pertimbangkan upgrade
   shimmer: ^3.0.0
   url_launcher: ^6.3.1
   device_info_plus: ^10.1.0
   flutter_local_notifications: ^17.1.2
   google_mobile_ads: ^5.3.1
-  firebase_core: ^3.4.0
-  firebase_auth: ^5.3.0
+  firebase_core: ^2.25.0
+  firebase_auth: ^5.3.0   # gunakan satu entri saja (versi terbaru yang kompatibel)
+  firebase_analytics: ^10.10.7
   package_info_plus: ^4.0.2
-  
 
 dev_dependencies:
   flutter_test:
@@ -40,12 +39,11 @@ flutter:
 
   assets:
     - assets/
-    - assets/images/logo.png        
-  
+    - assets/images/logo.png
+
   fonts:
     - family: Jost
       fonts:
         - asset: assets/fonts/Jost-Regular.ttf
         - asset: assets/fonts/Jost-Bold.ttf
           weight: 700
-    

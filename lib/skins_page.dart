@@ -32,16 +32,7 @@ class _SkinsPageState extends State<SkinsPage> {
   void initState() {
     super.initState();
     fetchHeroes();
-    Future.delayed(const Duration(milliseconds: 2000), () {
-    if (AppOpenAdManager.instance.isLoaded) {
-      AppOpenAdManager.instance.showAdIfAvailable();
-    } else {
-      print("⏳ Iklan belum siap, tunggu dulu...");
-    }
-  });
-      _loadInterstitialAd();
   _loadRewardedAd();
-  _loadBannerAd();
   }
 
   Future<void> fetchHeroes() async {
