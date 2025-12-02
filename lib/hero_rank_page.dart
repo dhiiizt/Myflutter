@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/hero_service.dart';
+import 'app_open_ad_manager.dart';
 
 class HeroRankPage extends StatefulWidget {
   const HeroRankPage({super.key});
@@ -16,6 +17,13 @@ class _HeroRankPageState extends State<HeroRankPage> {
   void initState() {
     super.initState();
     fetchHeroRank();
+    Future.delayed(const Duration(milliseconds: 2000), () {
+    if (AppOpenAdManager.instance.isLoaded) {
+      AppOpenAdManager.instance.showAdIfAvailable();
+    } else {
+      print("⏳ Iklan belum siap, tunggu dulu...");
+    }
+  });
   }
 
   Future<void> fetchHeroRank() async {

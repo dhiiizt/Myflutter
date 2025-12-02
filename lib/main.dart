@@ -13,6 +13,8 @@ import 'emote_page.dart';
 import 'recall_page.dart';
 import 'config_page.dart';
 import 'hero_rank_page.dart';
+import 'update_checker.dart';
+import 'app_open_ad_manager.dart';
 import '/helpers/download_manager_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -79,12 +81,13 @@ void main() async {
     print("❌ Firebase belum tertaut / belum diinisialisasi");
   }
   
- final config = RequestConfiguration(testDeviceIds: ['F71F441BD0999FE243258335D1249376']);
-await MobileAds.instance.updateRequestConfiguration(config);
+  
 await MobileAds.instance.initialize();
 
-  runApp(const MyApp());
+AppOpenAdManager.instance.loadAd();
 
+  runApp(const MyApp());
+    
   // 🔹 Jalankan cek izin setelah app tampil
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _checkPermissionsOnStart();
@@ -265,6 +268,8 @@ class CollapsiblePage extends StatefulWidget {
 }
 
 class _CollapsiblePageState extends State<CollapsiblePage> {
+
+
   String output = '';
 
   static const MethodChannel _channel = MethodChannel('com.esa.mlxinjector/native');
@@ -351,6 +356,8 @@ class _CollapsiblePageState extends State<CollapsiblePage> {
       );
     }
   }
+  
+  
   
   Future<String?> showPermissionDialog(BuildContext context) {
   return showCupertinoDialog<String>(
@@ -570,6 +577,10 @@ void _showInterstitialAd(VoidCallback onAdClosed) {
 void initState() {
   super.initState();
 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    UpdateChecker.checkForUpdate(context);
+  });
+
   // 🔹 Muat Interstitial Ad pertama kali
   _loadInterstitialAd();
 
@@ -577,6 +588,16 @@ void initState() {
   _loadRewardedAd();
   
   _loadBannerAd();
+  
+  Future.delayed(const Duration(milliseconds: 5000), () {
+    if (AppOpenAdManager.instance.isLoaded) {
+      AppOpenAdManager.instance.showAdIfAvailable();
+    } else {
+      print("⏳ Iklan belum siap, tunggu dulu...");
+    }
+  });
+  
+  
 }
 
 RewardedAd? _rewardedAd;
@@ -630,7 +651,7 @@ bool _isBannerAdReady = false;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
+    adUnitId: 'ca-app-pub-1802736608698554/9547069565', // ✅ ID test banner
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(
@@ -1296,46 +1317,33 @@ _hideProgressDialog();
     onTap: () {
       final title = feature['title'];
 
-      // 🔹 Pastikan iklan sudah dimuat, kalau belum, muat dulu
-      if (_interstitialAd == null) {
-        debugPrint('⚠️ Iklan belum siap, memuat ulang...');
-        _loadInterstitialAd();
+      // 🔹 Langsung navigasi tanpa iklan
+      if (title == 'Preview Skins') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SkinsPage()),
+        );
+      } else if (title == 'Unlock Emotes') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EmotePage()),
+        );
+      } else if (title == 'Unlock Recalls') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RecallPage()),
+        );
+      } else if (title == 'Drone View') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const DronePage()),
+        );
+      } else if (title == 'Meta Hero Ranking') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HeroRankPage()),
+        );
       }
-      
-      /*      if (_rewardedAd == null) {
-        debugPrint('⚠️ Iklan belum siap, memuat ulang...');
-        _loadRewardedAd();
-      } */
-
-      // 🔹 Tampilkan interstitial (atau lanjut langsung kalau belum siap)
-      _showInterstitialAd(() {
-        if (title == 'Preview Skins') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SkinsPage()),
-          );
-        } else if (title == 'Unlock Emotes') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const EmotePage()),
-          );
-        } else if (title == 'Unlock Recalls') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const RecallPage()),
-          );
-        } else if (title == 'Drone View') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const DronePage()),
-          );
-        } else if (title == 'Meta Hero Ranking') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HeroRankPage()),
-          );
-        }
-      });
     },
     child: Ink(
       width: 40,

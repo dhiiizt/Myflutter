@@ -9,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'main.dart'; // supaya bisa akses flutterLocalNotificationsPlugin
 import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'app_open_ad_manager.dart';
 
 class DronePage extends StatefulWidget {
   const DronePage({super.key});
@@ -25,6 +26,13 @@ class _DronePageState extends State<DronePage> {
 void initState() {
   super.initState();
   fetchDroneData();
+  Future.delayed(const Duration(milliseconds: 2000), () {
+    if (AppOpenAdManager.instance.isLoaded) {
+      AppOpenAdManager.instance.showAdIfAvailable();
+    } else {
+      print("⏳ Iklan belum siap, tunggu dulu...");
+    }
+  });
 
   // 🔹 Muat iklan lebih awal
   _loadInterstitialAd();
@@ -36,7 +44,7 @@ void initState() {
     setState(() => _loading = true);
     try {
       final url = Uri.parse(
-        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_drone_data_new.json',
+        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/drone_data_new.json',
       );
       final response = await http.get(url);
 
@@ -357,7 +365,7 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Drone List',
+          'Drone View List',
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,

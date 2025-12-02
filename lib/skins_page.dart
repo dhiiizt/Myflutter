@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'main.dart'; // supaya bisa akses flutterLocalNotificationsPlugin
 import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'app_open_ad_manager.dart';
 
 class SkinsPage extends StatefulWidget {
   const SkinsPage({super.key});
@@ -25,12 +26,19 @@ class _SkinsPageState extends State<SkinsPage> {
       GlobalKey<ScaffoldMessengerState>();
 
   final String jsonUrl =
-      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_hero_skins.json';
+      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/hero_skins.json';
 
   @override
   void initState() {
     super.initState();
     fetchHeroes();
+    Future.delayed(const Duration(milliseconds: 2000), () {
+    if (AppOpenAdManager.instance.isLoaded) {
+      AppOpenAdManager.instance.showAdIfAvailable();
+    } else {
+      print("⏳ Iklan belum siap, tunggu dulu...");
+    }
+  });
       _loadInterstitialAd();
   _loadRewardedAd();
   _loadBannerAd();
