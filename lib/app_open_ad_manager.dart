@@ -8,7 +8,7 @@ class AppOpenAdManager {
   bool _isShowing = false;
   bool _isLoaded = false;
 
-  final String adUnitId = "ca-app-pub-1802736608698554/4003098840"; // Test ID baru
+  final String adUnitId = "ca-app-pub-3940256099942544/3419835294"; // Test ID baru
 
   void loadAd() {
     print("🔄 Load App Open Ad...");

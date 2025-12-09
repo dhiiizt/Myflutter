@@ -5,12 +5,18 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateChecker {
-  static Future<void> checkForUpdate(BuildContext context) async {
-    const jsonUrl = "https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/app_update.json"; // Ganti URL JSON kamu
+  static Future<void> checkForUpdate(
+    BuildContext context,
+    VoidCallback onDone, // callback setelah selesai cek update
+  ) async {
+    const jsonUrl =
+        "https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/app_update.json";
 
-    /// Fetch JSON
     final response = await http.get(Uri.parse(jsonUrl));
-    if (response.statusCode != 200) return;
+    if (response.statusCode != 200) {
+      onDone(); // lanjut meskipun gagal fetch
+      return;
+    }
 
     final data = jsonDecode(response.body);
 
@@ -18,17 +24,16 @@ class UpdateChecker {
     final forceUpdate = data["force_update"];
     final updateUrl = data["update_url"];
 
-    /// Ambil versi aplikasi saat ini
     final info = await PackageInfo.fromPlatform();
     final currentVersion = info.version;
 
-    /// Bandingkan versi
     if (_isNewVersionAvailable(currentVersion, latestVersion)) {
-      _showUpdateDialog(context, updateUrl, forceUpdate);
+      _showUpdateDialog(context, updateUrl, forceUpdate, onDone);
+    } else {
+      onDone(); // tidak ada update → lanjut
     }
   }
 
-  /// Bandingkan versi: 1.0.1 < 1.0.2
   static bool _isNewVersionAvailable(String current, String latest) {
     final c = current.split('.').map(int.parse).toList();
     final l = latest.split('.').map(int.parse).toList();
@@ -41,25 +46,35 @@ class UpdateChecker {
   }
 
   static void _showUpdateDialog(
-      BuildContext context, String url, bool force) {
+    BuildContext context,
+    String url,
+    bool force,
+    VoidCallback onDone,
+  ) {
     showDialog(
-      barrierDismissible: !force, // Tidak bisa ditutup kalau force update
+      barrierDismissible: !force,
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Update Tersedia"),
-          content: const Text("Versi terbaru aplikasi sudah tersedia. Silakan update untuk melanjutkan."),
+          title: const Text("Update Available"),
+          content: const Text(
+            "A new version of the app is available. Please update to continue.",
+          ),
           actions: [
             if (!force)
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Nanti"),
+                onPressed: () {
+                  Navigator.pop(context);
+                  onDone(); // lanjut cek permission setelah dialog ditutup
+                },
+                child: const Text("Later"),
               ),
             TextButton(
               onPressed: () async {
                 if (await canLaunchUrl(Uri.parse(url))) {
                   launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                 }
+                // NOTE: untuk force update, onDone TIDAK dipanggil
               },
               child: const Text("Update"),
             ),

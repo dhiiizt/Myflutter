@@ -21,19 +21,49 @@ class DownloadManagerHelper {
 
     try {
       // === 0️⃣ Tentukan package Mobile Legends yang benar-benar terinstal ===
-      String? realPackage;
-      if (await StorageHelper.isAppInstalled('com.mobile.legends')) {
-        realPackage = 'com.mobile.legends';
-      } else if (await StorageHelper.isAppInstalled('com.mobile.legends.hwag')) {
-        realPackage = 'com.mobile.legends.hwag';
-      }
+String? realPackage;
 
-      if (realPackage == null) {
-        debugPrint('❌ Tidak ada Mobile Legends terinstal!');
-        return false;
-      }
+// Daftar lengkap MLBB
+final mlPackages = [
+  // Resmi Global
+  'com.mobile.legends',
 
-      debugPrint('🎯 Package target terdeteksi: $realPackage');
+  // Huawei AppGallery
+  'com.mobile.legends.hwag',
+
+  // Vietnam (VNG)
+  'com.vng.mlbbvn',
+
+  // USA Region
+  'com.mobile.legends.usa',
+
+  // India/Alternatif Global (mobiin)
+  'com.mobiin.gp',
+
+  // Xiaomi GetApps (OEM)
+  'com.mobilelegends.mi',
+
+  // Cadangan OEM lain (kadang muncul)
+  'com.mobile.legends.oppo',
+  'com.mobile.legends.vivo',
+  'com.mobile.legends.samsung',
+  'com.mobile.legends.asia',
+  'com.mobile.legends.id',
+];
+
+for (final pkg in mlPackages) {
+  if (await StorageHelper.isAppInstalled(pkg)) {
+    realPackage = pkg;
+    break;
+  }
+}
+
+if (realPackage == null) {
+  debugPrint('❌ Tidak ada Mobile Legends terinstal!');
+  return false;
+}
+
+debugPrint("✅ Mobile Legends ditemukan: $realPackage");
 
       // === 1️⃣ Siapkan direktori sementara ===
       tempDir = await getExternalStorageDirectory();

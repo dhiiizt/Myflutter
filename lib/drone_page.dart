@@ -9,7 +9,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'main.dart'; // supaya bisa akses flutterLocalNotificationsPlugin
 import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'app_open_ad_manager.dart';
 
 class DronePage extends StatefulWidget {
   const DronePage({super.key});
@@ -25,15 +24,19 @@ class _DronePageState extends State<DronePage> {
   @override
 void initState() {
   super.initState();
+
   fetchDroneData();
-  _loadRewardedAd();
+  _loadBannerAd();
+  _loadRewardedInterstitialAd();
+  _loadInterstitialAd();
+  
 }
 
   Future<void> fetchDroneData() async {
     setState(() => _loading = true);
     try {
       final url = Uri.parse(
-        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_drone_data_new.json',
+        'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/droneview_data.json',
       );
       final response = await http.get(url);
 
@@ -42,11 +45,11 @@ void initState() {
           droneItems = json.decode(response.body);
         });
       } else {
-        throw Exception('Gagal memuat data (${response.statusCode})');
+        throw Exception('Failed to load data (${response.statusCode})');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memuat data: $e')),
+        SnackBar(content: Text('Failed to load data: $e')),
       );
     } finally {
       setState(() => _loading = false);
@@ -54,12 +57,12 @@ void initState() {
   }
   
   ValueNotifier<double> _progress = ValueNotifier(0.0);
-ValueNotifier<String> _stageLabel = ValueNotifier('Menyiapkan...');
+ValueNotifier<String> _stageLabel = ValueNotifier('Prepare...');
 
 // 🔹 Dialog progress dengan bar + teks
 Future<void> _showProgressDialog() async {
   _progress.value = 0.0;
-  _stageLabel.value = 'Menyiapkan...';
+  _stageLabel.value = 'Prepare...';
 
   showCupertinoDialog(
     context: context,
@@ -76,7 +79,7 @@ Future<void> _showProgressDialog() async {
 
               return CupertinoAlertDialog(
                 title: const Text(
-                  'Mohon tunggu...',
+                  'Please wait...',
                   style: TextStyle(
                     fontFamily: 'Jost',
                     fontWeight: FontWeight.w600,
@@ -139,11 +142,96 @@ void _hideProgressDialog() {
   }
 }
 
+// ads
+
+BannerAd? _bannerAd;
+bool _isBannerAdReady = false;
+int bannerRetry = 0;
+
+void _loadBannerAd() {
+  _bannerAd = BannerAd(
+    adUnitId: 'ca-app-pub-3940256099942544/6300978111',  // ✅ ID test Banner Ads
+    request: const AdRequest(),
+    size: AdSize.banner,
+    listener: BannerAdListener(
+      onAdLoaded: (_) {
+        setState(() => _isBannerAdReady = true);
+        bannerRetry = 0;
+      },
+      onAdFailedToLoad: (ad, error) {
+        ad.dispose();
+        bannerRetry++;
+        if (bannerRetry < 3) {
+          Future.delayed(Duration(seconds: bannerRetry), _loadBannerAd);
+        }
+      },
+    ),
+  )..load();
+}
+
+RewardedInterstitialAd? _rewardedInterstitialAd;
+int rewardedInterstitialRetry = 0;
+
+void _loadRewardedInterstitialAd() {
+  RewardedInterstitialAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/5354046379', // ID test Rewarded Interstitial
+    request: const AdRequest(),
+    rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
+      onAdLoaded: (ad) {
+        _rewardedInterstitialAd = ad;
+        rewardedInterstitialRetry = 0;
+        debugPrint('✅ Rewarded Interstitial Loaded');
+      },
+      onAdFailedToLoad: (error) {
+        _rewardedInterstitialAd = null;
+        rewardedInterstitialRetry++;
+
+        debugPrint('❌ Failed to load Rewarded Interstitial: $error');
+
+        if (rewardedInterstitialRetry < 3) {
+          Future.delayed(
+            Duration(seconds: rewardedInterstitialRetry),
+            _loadRewardedInterstitialAd,
+          );
+        }
+      },
+    ),
+  );
+}
+
+void _showRewardedInterstitialAd(VoidCallback onRewardEarned) {
+  if (_rewardedInterstitialAd != null) {
+    _rewardedInterstitialAd!.fullScreenContentCallback =
+        FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _loadRewardedInterstitialAd(); // siapkan iklan berikutnya
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _loadRewardedInterstitialAd();
+        debugPrint('⚠️ Gagal menampilkan Rewarded Interstitial: $error');
+      },
+    );
+
+    _rewardedInterstitialAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        debugPrint('🎁 User mendapat reward: ${reward.amount} ${reward.type}');
+        onRewardEarned(); // panggil aksi reward
+      },
+    );
+
+    _rewardedInterstitialAd = null;
+  } else {
+    debugPrint('⚠️ Rewarded Interstitial belum siap');
+  }
+}
+
 InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID test Interstitial Ads
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -182,78 +270,6 @@ void _showInterstitialAd(VoidCallback onAdClosed) {
   }
 }
 
-
-
-RewardedAd? _rewardedAd;
-
-void _loadRewardedAd() {
-  RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
-    request: const AdRequest(),
-    rewardedAdLoadCallback: RewardedAdLoadCallback(
-      onAdLoaded: (ad) {
-        _rewardedAd = ad;
-        debugPrint('✅ Iklan Rewarded berhasil dimuat');
-      },
-      onAdFailedToLoad: (error) {
-        _rewardedAd = null;
-        debugPrint('❌ Gagal memuat Rewarded Ad: $error');
-      },
-    ),
-  );
-}
-
-void _showRewardedAd(VoidCallback onRewardEarned) {
-  if (_rewardedAd != null) {
-    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        _loadRewardedAd(); // 🔁 Siapkan iklan berikutnya
-      },
-      onAdFailedToShowFullScreenContent: (ad, error) {
-        ad.dispose();
-        _loadRewardedAd();
-        debugPrint('⚠️ Gagal menampilkan iklan Rewarded: $error');
-      },
-    );
-
-    _rewardedAd!.show(
-      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        debugPrint('🎁 Pengguna mendapat reward: ${reward.amount} ${reward.type}');
-        onRewardEarned(); // ✅ jalankan aksi reward di sini
-      },
-    );
-
-    _rewardedAd = null;
-  } else {
-    debugPrint('⚠️ Rewarded Ad belum siap');
-  }
-}
-
-BannerAd? _bannerAd;
-bool _isBannerAdReady = false;
-
-void _loadBannerAd() {
-  _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
-    request: const AdRequest(),
-    size: AdSize.banner,
-    listener: BannerAdListener(
-      onAdLoaded: (Ad ad) {
-        debugPrint('✅ Iklan Banner berhasil dimuat');
-        setState(() {
-          _isBannerAdReady = true;
-        });
-      },
-      onAdFailedToLoad: (Ad ad, LoadAdError error) {
-        debugPrint('❌ Gagal memuat Banner Ad: $error');
-        _isBannerAdReady = false;
-        ad.dispose();
-      },
-    ),
-  )..load();
-}
-
 Future<void> showNotification(String title, String body) async {
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
@@ -288,7 +304,7 @@ Future<void> _showAdLoadingDialog() async {
           CupertinoActivityIndicator(radius: 14),
           SizedBox(height: 15),
           Text(
-            'Menyiapkan...',
+            'Prepare...',
             style: TextStyle(fontFamily: 'Jost'),
           ),
         ],
@@ -304,32 +320,59 @@ void _hideAdLoadingDialog() {
 }
 
 Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
-  int retry = 0;
-  const maxRetry = 5;
-
   await _showAdLoadingDialog();
 
-  while (_rewardedAd == null && retry < maxRetry) {
-    debugPrint('⌛ Memuat iklan... (${retry + 1}/$maxRetry)');
-    _loadRewardedAd();
+  // ================================
+  // 1️⃣ Coba load Rewarded Interstitial jika belum ada
+  // ================================
+  if (_rewardedInterstitialAd == null) {
+    debugPrint('⌛ Memuat Rewarded Interstitial...');
+    _loadRewardedInterstitialAd();
     await Future.delayed(const Duration(seconds: 2));
-    retry++;
+  }
+
+  // ================================
+  // 2️⃣ Jika RI tetap tidak ada → coba Interstitial
+  // ================================
+  if (_rewardedInterstitialAd == null) {
+    debugPrint('⚠️ Rewarded Interstitial tidak siap, mencoba Interstitial Ads...');
+
+    if (_interstitialAd == null) {
+      _loadInterstitialAd();
+      await Future.delayed(const Duration(seconds: 2));
+    }
   }
 
   _hideAdLoadingDialog();
 
-  if (_rewardedAd == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('❌ Iklan gagal dimuat, coba lagi nanti.'),
-      ),
-    );
-    return; // STOP - TIDAK DOWNLOAD
+  // ================================
+  // 3️⃣ Jika RI siap → tampilkan RI
+  // ================================
+  if (_rewardedInterstitialAd != null) {
+    _showRewardedInterstitialAd(() {
+      onRewarded(); // Berikan reward setelah user menonton
+    });
+    return;
   }
 
-  _showRewardedAd(() {
-    onRewarded();
-  });
+  // ================================
+  // 4️⃣ Jika Interstitial siap → tampilkan Interstitial
+  // ================================
+  if (_interstitialAd != null) {
+    _showInterstitialAd(() {
+      onRewarded(); // Tetap kasih reward
+    });
+    return;
+  }
+
+  // ================================
+  // 5️⃣ Jika IKLAN TIDAK ADA → gagal
+  // ================================
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('❌ Ad not available, please try again later.'),
+    ),
+  );
 }
 
   @override
@@ -368,7 +411,7 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : droneItems.isEmpty
-              ? const Center(child: Text('Tidak ada data drone.'))
+              ? const Center(child: Text('No drone data.'))
               : Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: GridView.builder(
@@ -449,7 +492,7 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
     final url = item['downloadUrl'];
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data tidak ditemukan!')),
+        const SnackBar(content: Text('Data not found!')),
       );
       return;
     }
@@ -464,20 +507,20 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'Apakah kamu ingin mengunduh dan memasang "${item['title']}"?',
+            'Do you want to install "${item['title']}"?',
             style: const TextStyle(fontFamily: 'Jost'),
           ),
         ),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           CupertinoDialogAction(
             isDefaultAction: true,
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
-              'Download',
+              'Continue',
               style: TextStyle(color: CupertinoColors.systemBlue),
             ),
           ),
@@ -498,16 +541,16 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
         onProgress: (stage, progress) {
           switch (stage) {
             case 'download':
-              _stageLabel.value = 'Mengunduh file...';
+              _stageLabel.value = 'Downloading files...';
               break;
             case 'extract':
-              _stageLabel.value = 'Menganalisa file...';
+              _stageLabel.value = 'Analyzing files...';
               break;
             case 'move':
-              _stageLabel.value = 'Memasang file...';
+              _stageLabel.value = 'Installing files...';
               break;
             default:
-              _stageLabel.value = 'Memproses...';
+              _stageLabel.value = 'Processing...';
           }
           _progress.value = progress;
         },
@@ -517,19 +560,19 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
 
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Download & pasang berhasil!')),
+          const SnackBar(content: Text('✅ Download & install successful!')),
         );
         await showNotification(
-          'Berhasil ✅',
-          '"${item['title']} ${item['description']}" telah dipasang!',
+          'Succeed ✅',
+          '"${item['title']} ${item['description']}" has been installed!',
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Gagal download atau pasang!')),
+          const SnackBar(content: Text('❌ Failed to download or install!')),
         );
         await showNotification(
-          'Gagal ❌',
-          'Download atau pemasangan "${item['title']} ${item['description']}" gagal.',
+          'Failed ❌',
+          'Download or installation "${item['title']} ${item['description']}" failed.',
         );
       }
     });
@@ -543,6 +586,14 @@ Future<void> _ensureRewardedAdAndShow(VoidCallback onRewarded) async {
                     },
                   ),
                 ),
+                bottomNavigationBar: _isBannerAdReady
+      ? Container(
+          height: _bannerAd!.size.height.toDouble(),
+          width: double.infinity,
+          color: Colors.transparent,
+          child: AdWidget(ad: _bannerAd!),
+        )
+      : null,
     );
   }
 }

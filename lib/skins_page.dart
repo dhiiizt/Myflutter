@@ -26,13 +26,13 @@ class _SkinsPageState extends State<SkinsPage> {
       GlobalKey<ScaffoldMessengerState>();
 
   final String jsonUrl =
-      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/preview_hero_skins.json';
+      'https://raw.githubusercontent.com/dhiiizt/dhiiizt/refs/heads/main/Json/hero_skins.json';
 
   @override
   void initState() {
     super.initState();
     fetchHeroes();
-  _loadRewardedAd();
+    _loadRewardedInterstitialAd();
   }
 
   Future<void> fetchHeroes() async {
@@ -91,12 +91,12 @@ class _SkinsPageState extends State<SkinsPage> {
   }
   
   ValueNotifier<double> _progress = ValueNotifier(0.0);
-ValueNotifier<String> _stageLabel = ValueNotifier('Menyiapkan...');
+ValueNotifier<String> _stageLabel = ValueNotifier('Prepare...');
 
 // 🔹 Dialog progress dengan bar + teks
 Future<void> _showProgressDialog() async {
   _progress.value = 0.0;
-  _stageLabel.value = 'Menyiapkan...';
+  _stageLabel.value = 'Prepare...';
 
   showCupertinoDialog(
     context: context,
@@ -113,7 +113,7 @@ Future<void> _showProgressDialog() async {
 
               return CupertinoAlertDialog(
                 title: const Text(
-                  'Mohon tunggu...',
+                  'Please wait...',
                   style: TextStyle(
                     fontFamily: 'Jost',
                     fontWeight: FontWeight.w600,
@@ -176,118 +176,64 @@ void _hideProgressDialog() {
   }
 }
 
-InterstitialAd? _interstitialAd;
+// ads
 
-void _loadInterstitialAd() {
-  InterstitialAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID iklan TEST
+RewardedInterstitialAd? _rewardedInterstitialAd;
+int rewardedInterstitialRetry = 0;
+
+void _loadRewardedInterstitialAd() {
+  RewardedInterstitialAd.load(
+    adUnitId: 'ca-app-pub-3940256099942544/5354046379', // ID test Rewarded Interstitial
     request: const AdRequest(),
-    adLoadCallback: InterstitialAdLoadCallback(
+    rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
       onAdLoaded: (ad) {
-        _interstitialAd = ad;
-        debugPrint('✅ Iklan Interstitial berhasil dimuat');
+        _rewardedInterstitialAd = ad;
+        rewardedInterstitialRetry = 0;
+        debugPrint('✅ Rewarded Interstitial Loaded');
       },
       onAdFailedToLoad: (error) {
-        _interstitialAd = null;
-        debugPrint('❌ Gagal memuat iklan: $error');
+        _rewardedInterstitialAd = null;
+        rewardedInterstitialRetry++;
+
+        debugPrint('❌ Failed to load Rewarded Interstitial: $error');
+
+        if (rewardedInterstitialRetry < 3) {
+          Future.delayed(
+            Duration(seconds: rewardedInterstitialRetry),
+            _loadRewardedInterstitialAd,
+          );
+        }
       },
     ),
   );
 }
 
-void _showInterstitialAd(VoidCallback onAdClosed) {
-  if (_interstitialAd != null) {
-    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+void _showRewardedInterstitialAd(VoidCallback onRewardEarned) {
+  if (_rewardedInterstitialAd != null) {
+    _rewardedInterstitialAd!.fullScreenContentCallback =
+        FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
-        _loadInterstitialAd(); // 🔁 Siapkan iklan berikutnya
-        onAdClosed(); // ✅ lanjut ke aksi berikutnya
+        _loadRewardedInterstitialAd(); // siapkan iklan berikutnya
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         ad.dispose();
-        _loadInterstitialAd();
-        onAdClosed(); // tetap lanjut walau gagal tampil
-        debugPrint('⚠️ Gagal menampilkan iklan: $error');
+        _loadRewardedInterstitialAd();
+        debugPrint('⚠️ Gagal menampilkan Rewarded Interstitial: $error');
       },
     );
 
-    _interstitialAd!.show();
-    _interstitialAd = null; // ❗ jangan tampilkan dua kali
-  } else {
-    debugPrint('⚠️ Iklan belum siap, lanjut saja');
-    onAdClosed();
-  }
-}
-
-
-RewardedAd? _rewardedAd;
-
-void _loadRewardedAd() {
-  RewardedAd.load(
-    adUnitId: 'ca-app-pub-1802736608698554/7171045052', // ✅ ID test Rewarded Ad
-    request: const AdRequest(),
-    rewardedAdLoadCallback: RewardedAdLoadCallback(
-      onAdLoaded: (ad) {
-        _rewardedAd = ad;
-        debugPrint('✅ Iklan Rewarded berhasil dimuat');
-      },
-      onAdFailedToLoad: (error) {
-        _rewardedAd = null;
-        debugPrint('❌ Gagal memuat Rewarded Ad: $error');
-      },
-    ),
-  );
-}
-
-void _showRewardedAd(VoidCallback onRewardEarned) {
-  if (_rewardedAd != null) {
-    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        _loadRewardedAd(); // 🔁 Siapkan iklan berikutnya
-      },
-      onAdFailedToShowFullScreenContent: (ad, error) {
-        ad.dispose();
-        _loadRewardedAd();
-        debugPrint('⚠️ Gagal menampilkan iklan Rewarded: $error');
-      },
-    );
-
-    _rewardedAd!.show(
+    _rewardedInterstitialAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        debugPrint('🎁 Pengguna mendapat reward: ${reward.amount} ${reward.type}');
-        onRewardEarned(); // ✅ jalankan aksi reward di sini
+        debugPrint('🎁 User mendapat reward: ${reward.amount} ${reward.type}');
+        onRewardEarned(); // panggil aksi reward
       },
     );
 
-    _rewardedAd = null;
+    _rewardedInterstitialAd = null;
   } else {
-    debugPrint('⚠️ Rewarded Ad belum siap');
+    debugPrint('⚠️ Rewarded Interstitial belum siap');
   }
-}
-
-BannerAd? _bannerAd;
-bool _isBannerAdReady = false;
-
-void _loadBannerAd() {
-  _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-1802736608698554/3423371739', // ✅ ID test banner
-    request: const AdRequest(),
-    size: AdSize.banner,
-    listener: BannerAdListener(
-      onAdLoaded: (Ad ad) {
-        debugPrint('✅ Iklan Banner berhasil dimuat');
-        setState(() {
-          _isBannerAdReady = true;
-        });
-      },
-      onAdFailedToLoad: (Ad ad, LoadAdError error) {
-        debugPrint('❌ Gagal memuat Banner Ad: $error');
-        _isBannerAdReady = false;
-        ad.dispose();
-      },
-    ),
-  )..load();
 }
 
 Future<void> showNotification(String title, String body) async {
@@ -583,20 +529,20 @@ Future<void> showNotification(String title, String body) async {
       content: Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(
-          'Apakah kamu ingin mengunduh dan memasang "${skin['name']}"?',
+          'Do you want to install "${skin['name']}"?',
           style: const TextStyle(fontFamily: 'Jost'),
         ),
       ),
       actions: [
         CupertinoDialogAction(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
+          child: const Text('Cancel'),
         ),
         CupertinoDialogAction(
           isDefaultAction: true,
           onPressed: () => Navigator.pop(context, true),
           child: const Text(
-            'Download',
+            'Continue',
             style: TextStyle(color: CupertinoColors.systemBlue),
           ),
         ),
@@ -606,105 +552,110 @@ Future<void> showNotification(String title, String body) async {
 
   if (confirm != true) return;
 
-  final url = skin['download_url'];
-  final skinName = skin['name'] ?? 'Unknown Skin';
+final url = skin['download_url'];
+final skinName = skin['name'] ?? 'Unknown Skin';
 
-  if (url == null || url.isEmpty) {
-    _scaffoldMessengerKey.currentState?.showSnackBar(
-      const SnackBar(content: Text('Data tidak ditemukan!')),
-    );
-    return;
-  }
+if (url == null || url.isEmpty) {
+  _scaffoldMessengerKey.currentState?.showSnackBar(
+    const SnackBar(content: Text('Data tidak ditemukan!')),
+  );
+  return;
+}
 
-  // 🔹 Kalau iklan belum siap → lanjut download tanpa iklan
-  if (_rewardedAd == null) {
+// =========================
+// 🔸 FALLBACK: IKLAN TIDAK SIAP
+// =========================
+if (_rewardedInterstitialAd == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('⚠️ Ad not ready, continue.')),
+  );
+
+  _loadRewardedInterstitialAd(); // siapkan untuk berikutnya
+
+  // 🔸 LANGSUNG MULAI DOWNLOAD
+  await _showProgressDialog();
+
+  final result = await DownloadManagerHelper.handleDownloadAndInstall(
+    url,
+    onProgress: (stage, progress) {
+      switch (stage) {
+        case 'download':
+          _stageLabel.value = 'Downloading files...';
+          break;
+        case 'extract':
+          _stageLabel.value = 'Analyzing files...';
+          break;
+        case 'move':
+          _stageLabel.value = 'Installing files...';
+          break;
+        default:
+          _stageLabel.value = 'Processing...';
+          break;
+      }
+      _progress.value = progress;
+    },
+  );
+
+  _hideProgressDialog();
+
+  if (result) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('⚠️ Iklan belum siap, lanjutkan.')),
+      const SnackBar(content: Text('✅ Download & install successful!')),
     );
-    _loadRewardedAd(); // muat ulang iklan biar siap nanti
-
-    // 🔹 Langsung mulai proses download
-    await _showProgressDialog();
-
-    final result = await DownloadManagerHelper.handleDownloadAndInstall(
-      url,
-      onProgress: (stage, progress) {
-        switch (stage) {
-          case 'download':
-            _stageLabel.value = 'Mengunduh file...';
-            break;
-          case 'extract':
-            _stageLabel.value = 'Menganalisa file...';
-            break;
-          case 'move':
-            _stageLabel.value = 'Memasang file...';
-            break;
-          default:
-            _stageLabel.value = 'Memproses...';
-            break;
-        }
-        _progress.value = progress;
-      },
+    await showNotification('Succeed ✅', 'Skin "$skinName" has been installed!');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❌ Failed to download or install!')),
     );
-
-    _hideProgressDialog();
-
-    if (result) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
-      );
-      await showNotification('Berhasil ✅', 'Skin "$skinName" telah dipasang!');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
-      );
-      await showNotification('Gagal ❌', 'Download atau pemasangan skin "$skinName" gagal.');
-    }
-
-    return; // ⛔️ Jangan lanjut ke bagian iklan di bawah
+    await showNotification('Failed ❌', 'Download or install skin "$skinName" failed.');
   }
 
-  // 🔹 Kalau iklan siap → tampilkan rewarded ad dulu
-  _showRewardedAd(() async {
-    debugPrint('Reward didapat, mulai proses download skin...');
+  return; // ⛔ STOP — jangan lanjut ke iklan
+}
 
-    await _showProgressDialog();
+// =========================
+// 🔥 IKLAN REWARDED INTERSTITIAL SIAP
+// =========================
+_showRewardedInterstitialAd(() async {
+  debugPrint('🎁 Reward diterima → mulai proses download...');
 
-    final result = await DownloadManagerHelper.handleDownloadAndInstall(
-      url,
-      onProgress: (stage, progress) {
-        switch (stage) {
-          case 'download':
-            _stageLabel.value = 'Mengunduh file...';
-            break;
-          case 'extract':
-            _stageLabel.value = 'Menganalisa file...';
-            break;
-          case 'move':
-            _stageLabel.value = 'Memasang file...';
-            break;
-          default:
-            _stageLabel.value = 'Memproses...';
-            break;
-        }
-        _progress.value = progress;
-      },
+  await _showProgressDialog();
+
+  final result = await DownloadManagerHelper.handleDownloadAndInstall(
+    url,
+    onProgress: (stage, progress) {
+      switch (stage) {
+        case 'download':
+          _stageLabel.value = 'Downloading files...';
+          break;
+        case 'extract':
+          _stageLabel.value = 'Analyzing files...';
+          break;
+        case 'move':
+          _stageLabel.value = 'Installing files...';
+          break;
+        default:
+          _stageLabel.value = 'Processing...';
+          break;
+      }
+      _progress.value = progress;
+    },
+  );
+
+  _hideProgressDialog();
+
+  if (result) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Download & install successful!')),
     );
-
-    _hideProgressDialog();
-
-    if (result) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Download & pasang berhasil!')),
-      );
-      await showNotification('Berhasil ✅', 'Skin "$skinName" telah dipasang!');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('❌ Gagal download atau pasang!')),
-      );
-      await showNotification('Gagal ❌', 'Download atau pemasangan skin "$skinName" gagal.');
-    }
-  });
+    await showNotification('Succeed ✅', 'Skin "$skinName" has been installed!');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('❌ Failed to download or install!')),
+    );
+    await showNotification('Failed ❌', 'Download or install skin "$skinName" failed.');
+  }
+});
 }
 }
 

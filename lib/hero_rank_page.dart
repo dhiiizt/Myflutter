@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/services/hero_service.dart';
-import 'app_open_ad_manager.dart';
 import 'adaptive_banner.dart';
 
 class HeroRankPage extends StatefulWidget {
@@ -291,17 +290,7 @@ class _HeroRankPageState extends State<HeroRankPage> {
                   ),
           ),
 
-          // ===========================================================
-          // ⭐ ADAPTIVE BANNER POSISI BAWAH
-          // ===========================================================
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: AdaptiveBanner(
-              adUnitId: "ca-app-pub-1802736608698554/9547069565", // TEST ID
-            ),
-          ),
+
         ],
       ),
     );
