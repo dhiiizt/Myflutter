@@ -150,7 +150,7 @@ int bannerRetry = 0;
 
 void _loadBannerAd() {
   _bannerAd = BannerAd(
-    adUnitId: 'ca-app-pub-3940256099942544/6300978111',  // ✅ ID test Banner Ads
+    adUnitId: 'ca-app-pub-1802736608698554/9547069565',  // ✅ ID test Banner Ads
     request: const AdRequest(),
     size: AdSize.banner,
     listener: BannerAdListener(
@@ -174,7 +174,7 @@ int rewardedInterstitialRetry = 0;
 
 void _loadRewardedInterstitialAd() {
   RewardedInterstitialAd.load(
-    adUnitId: 'ca-app-pub-3940256099942544/5354046379', // ID test Rewarded Interstitial
+    adUnitId: 'ca-app-pub-1802736608698554/8582297634', // ID test Rewarded Interstitial
     request: const AdRequest(),
     rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
       onAdLoaded: (ad) {
@@ -231,7 +231,7 @@ InterstitialAd? _interstitialAd;
 
 void _loadInterstitialAd() {
   InterstitialAd.load(
-    adUnitId: 'ca-app-pub-3940256099942544/1033173712', // ✅ ID test Interstitial Ads
+    adUnitId: 'ca-app-pub-1802736608698554/3551472040', // ✅ ID test Interstitial Ads
     request: const AdRequest(),
     adLoadCallback: InterstitialAdLoadCallback(
       onAdLoaded: (ad) {

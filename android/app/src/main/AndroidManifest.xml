@@ -75,6 +75,10 @@
     <queries>
         <package android:name="com.mobile.legends" />
         <package android:name="com.mobile.legends.hwag" />
+        <package android:name="com.vng.mlbbvn" />
+        <package android:name="com.mobile.legends.usa" />
+        <package android:name="com.mobiin.gp" />
+        <package android:name="com.mobilelegends.mi" />
         <package android:name="moe.shizuku.privileged.api" />
 
         <intent>

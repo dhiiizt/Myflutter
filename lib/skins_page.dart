@@ -183,7 +183,7 @@ int rewardedInterstitialRetry = 0;
 
 void _loadRewardedInterstitialAd() {
   RewardedInterstitialAd.load(
-    adUnitId: 'ca-app-pub-3940256099942544/5354046379', // ID test Rewarded Interstitial
+    adUnitId: 'ca-app-pub-1802736608698554/8582297634', // ID test Rewarded Interstitial
     request: const AdRequest(),
     rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
       onAdLoaded: (ad) {
