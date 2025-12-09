@@ -1475,7 +1475,7 @@ SliverToBoxAdapter(
           ),
         ), */
         AdaptiveBanner(
-  adUnitId: "ca-app-pub-3940256099942544/6300978111", // ID test Adaptive Banner
+  adUnitId: "ca-app-pub-1802736608698554/9547069565", // ID test Adaptive Banner
 ),
       
       ],
