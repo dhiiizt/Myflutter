@@ -1,4 +1,4 @@
-name: Flutter Build Signed APK Split
+name: Flutter Build Signed AAB
 
 on:
   push:
@@ -36,12 +36,13 @@ jobs:
       - name: Flutter clean
         run: flutter clean
 
-      # 🏗 Build APK per-ABI
-      - name: Build Split APK
-        run: flutter build apk --release --split-per-abi
+      # 🏗 Build AAB
+      - name: Build AAB
+        run: flutter build appbundle --release
 
-      - name: Upload APKs
+      # ⬆ Upload artifact AAB
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: split-apk-signed
-          path: build/app/outputs/flutter-apk/*.apk
+          name: appbundle-release
+          path: build/app/outputs/bundle/release/*.aab
