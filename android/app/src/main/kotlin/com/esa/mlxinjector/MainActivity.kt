@@ -462,9 +462,14 @@ private suspend fun copyFilesDrone(source: File, targetTree: DocumentFile, conte
         if (requestCode == TREE_REQUEST_CODE) {
             val resultUri: String? = if (resultCode == Activity.RESULT_OK && data?.data != null) {
                 val uri = data.data!!
-                if (isValidMLTreeUri(uri, "com.mobile.legends") ||
-                    isValidMLTreeUri(uri, "com.mobile.legends.hwag")
-                ) {
+                if (
+                        isValidMLTreeUri(uri, "com.mobile.legends") ||
+                        isValidMLTreeUri(uri, "com.mobiin.gp") ||
+                        isValidMLTreeUri(uri, "com.vng.mlbbvn") ||
+                        isValidMLTreeUri(uri, "com.mobile.legends.usa") ||
+                        isValidMLTreeUri(uri, "com.mobilelegends.mi") ||
+                        isValidMLTreeUri(uri, "com.mobile.legends.hwag")
+                    ) {
                     contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION

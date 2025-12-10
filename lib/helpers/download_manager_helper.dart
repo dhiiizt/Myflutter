@@ -43,12 +43,6 @@ final mlPackages = [
   // Xiaomi GetApps (OEM)
   'com.mobilelegends.mi',
 
-  // Cadangan OEM lain (kadang muncul)
-  'com.mobile.legends.oppo',
-  'com.mobile.legends.vivo',
-  'com.mobile.legends.samsung',
-  'com.mobile.legends.asia',
-  'com.mobile.legends.id',
 ];
 
 for (final pkg in mlPackages) {
